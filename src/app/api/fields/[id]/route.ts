@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware } from '@/lib/auth';
-import connectToDatabase from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import Field from '@/models/Field';
+import Growth from '@/models/Growth';
 
-interface Params {
+interface Props {
   params: {
     id: string;
   };
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Props) {
   try {
     // Authenticate user
     const user = await authMiddleware(req);
@@ -17,116 +18,80 @@ export async function GET(req: NextRequest, { params }: Params) {
       return user; // Return the error response if authentication failed
     }
 
-    // Connect to the database
-    await connectToDatabase();
+    const fieldId = params.id;
+    if (!fieldId) {
+      return NextResponse.json(
+        { success: false, message: 'Field ID is required' },
+        { status: 400 }
+      );
+    }
 
-    // Get field ID from params
-    const { id } = params;
+    // Connect to database
+    await dbConnect();
+    
+    // Get field data
+    const field = await Field.findOne({
+      _id: fieldId,
+      userId: (user as any).id // Cast user to any to access id property
+    });
 
-    // Fetch field details
-    const field = await Field.findById(id);
     if (!field) {
       return NextResponse.json(
-        { success: false, message: 'Field not found' },
+        { success: false, message: 'Field not found or access denied' },
         { status: 404 }
       );
     }
 
-    // Check if the field belongs to the user
-    if (field.farmer.toString() !== (user as any).id) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized to access this field' },
-        { status: 403 }
-      );
+    // Get growth data if field has an active crop
+    let growthData = null;
+    if (field.status === 'active' && field.crop) {
+      growthData = await Growth.findOne({ fieldId: fieldId });
     }
 
-    // Simulate fetching additional field data
-    // In a real application, this might come from different databases or external APIs
-    
-    // Generate growth data
-    const growthData = {
-      growthPercentage: Math.floor(Math.random() * 100),
-      harvestTimeLeftPercentage: Math.floor(Math.random() * 100),
-      daysPlanted: Math.floor(Math.random() * 90) + 10,
-      daysRemaining: Math.floor(Math.random() * 60) + 10,
-      estimatedYield: Math.floor(Math.random() * 1000) + 500,
-      growthHistory: [
-        { month: 'Jan', value: Math.floor(Math.random() * 30) },
-        { month: 'Feb', value: Math.floor(Math.random() * 40) + 10 },
-        { month: 'Mar', value: Math.floor(Math.random() * 50) + 20 },
-        { month: 'Apr', value: Math.floor(Math.random() * 60) + 30 },
-        { month: 'May', value: Math.floor(Math.random() * 70) + 40 },
-        { month: 'Jun', value: Math.floor(Math.random() * 80) + 50 },
-      ],
-      recommendations: [
-        'Consider increasing water levels for optimal growth',
-        'Apply nitrogen-rich fertilizer to improve soil health',
-        'Monitor for pest infestations, particularly in the eastern section',
-        'Install additional drainage to prevent waterlogging'
-      ]
-    };
-
-    // Generate weather data
-    const weatherData = {
-      current: {
-        temperature: Math.floor(Math.random() * 15) + 15, // 15-30°C
-        condition: ['Sunny', 'Cloudy', 'Partly Cloudy', 'Rainy'][Math.floor(Math.random() * 4)],
-        humidity: Math.floor(Math.random() * 50) + 30, // 30-80%
-        windSpeed: Math.floor(Math.random() * 20) + 5, // 5-25 km/h
-        day: new Date().toLocaleDateString('en-US', { weekday: 'long' })
-      },
+    // Get weather data for field location
+    // In a real app, this would call a weather API using the field's location
+    const mockWeatherData = {
+      location: field.location,
+      currentTemp: Math.round(20 + Math.random() * 15), // Random temperature between 20-35°C
+      humidity: Math.round(40 + Math.random() * 40), // Random humidity between 40-80%
+      rainfall: Math.round(Math.random() * 50), // Random rainfall between 0-50mm
       forecast: [
-        {
-          day: 'Mon',
-          temperature: Math.floor(Math.random() * 15) + 15,
-          condition: ['Sunny', 'Cloudy', 'Partly Cloudy', 'Rainy'][Math.floor(Math.random() * 4)]
-        },
-        {
-          day: 'Tue',
-          temperature: Math.floor(Math.random() * 15) + 15,
-          condition: ['Sunny', 'Cloudy', 'Partly Cloudy', 'Rainy'][Math.floor(Math.random() * 4)]
-        },
-        {
-          day: 'Wed',
-          temperature: Math.floor(Math.random() * 15) + 15,
-          condition: ['Sunny', 'Cloudy', 'Partly Cloudy', 'Rainy'][Math.floor(Math.random() * 4)]
-        },
-        {
-          day: 'Thu',
-          temperature: Math.floor(Math.random() * 15) + 15,
-          condition: ['Sunny', 'Cloudy', 'Partly Cloudy', 'Rainy'][Math.floor(Math.random() * 4)]
-        }
+        { day: 'Today', highTemp: Math.round(25 + Math.random() * 10), lowTemp: Math.round(15 + Math.random() * 5), condition: 'Sunny' },
+        { day: 'Tomorrow', highTemp: Math.round(25 + Math.random() * 10), lowTemp: Math.round(15 + Math.random() * 5), condition: 'Partly Cloudy' },
+        { day: 'Day 3', highTemp: Math.round(25 + Math.random() * 10), lowTemp: Math.round(15 + Math.random() * 5), condition: 'Cloudy' }
       ]
-    };
-
-    // Generate soil data
-    const soilData = {
-      moisture: Math.floor(Math.random() * 30) + 30, // 30-60%
-      pH: parseFloat((Math.random() * 3 + 5).toFixed(1)), // 5.0-8.0
-      nutrition: {
-        nitrogen: Math.floor(Math.random() * 60) + 20, // 20-80
-        phosphorus: Math.floor(Math.random() * 60) + 20, // 20-80
-        potassium: Math.floor(Math.random() * 60) + 20 // 20-80
-      },
-      healthScore: Math.floor(Math.random() * 60) + 40, // 40-100
-    };
-
-    // Combine all data
-    const fieldData = {
-      field: field,
-      growth: growthData,
-      weather: weatherData,
-      soil: soilData
     };
 
     return NextResponse.json(
-      { success: true, data: fieldData },
+      { 
+        success: true, 
+        data: {
+          field: {
+            id: field._id,
+            name: field.name,
+            location: field.location,
+            landArea: field.landArea,
+            soilType: field.soilType,
+            waterLevel: field.waterLevel,
+            temperature: field.temperature,
+            season: field.season,
+            status: field.status,
+            crop: field.crop,
+            cropDetails: field.cropDetails,
+            createdAt: field.createdAt,
+            updatedAt: field.updatedAt,
+            growthStartDate: field.growthStartDate
+          },
+          growth: growthData,
+          weather: mockWeatherData
+        }
+      },
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error fetching field data:', error);
+    console.error('Error fetching field details:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch field data' },
+      { success: false, message: error.message || 'Failed to fetch field details' },
       { status: 500 }
     );
   }

@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Secret } from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { IUser } from '@/models/User';
@@ -15,7 +15,7 @@ export const generateToken = (user: Partial<IUser>) => {
       email: user.email,
       role: user.role,
     },
-    JWT_SECRET,
+    JWT_SECRET as Secret,
     {
       expiresIn: JWT_EXPIRES_IN,
     }
@@ -32,8 +32,9 @@ export const verifyToken = (token: string) => {
 };
 
 // Set JWT token in cookie
-export const setTokenCookie = (token: string) => {
-  cookies().set({
+export const setTokenCookie = async (token: string) => {
+  const cookiesStore = await cookies();
+  cookiesStore.set({
     name: 'token',
     value: token,
     httpOnly: true,
@@ -45,44 +46,55 @@ export const setTokenCookie = (token: string) => {
 };
 
 // Get JWT token from cookie
-export const getTokenFromCookie = () => {
-  return cookies().get('token')?.value;
+export const getTokenFromCookie = async () => {
+  const cookiesStore = await cookies();
+  return cookiesStore.get('token')?.value;
 };
 
 // Remove JWT token from cookie
-export const removeTokenCookie = () => {
-  cookies().delete('token');
+export const removeTokenCookie = async () => {
+  const cookiesStore = await cookies();
+  cookiesStore.delete('token');
 };
 
 // Authentication middleware
-export const authMiddleware = async (req: NextRequest) => {
+export async function authMiddleware(req: NextRequest) {
   try {
-    const token = req.cookies.get('token')?.value;
-
-    if (!token) {
+    // Get token from header
+    const authHeader = req.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, message: 'Authentication required' },
+        { success: false, message: 'Authorization token missing' },
         { status: 401 }
       );
     }
 
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      return decoded;
+    } catch (error) {
       return NextResponse.json(
-        { success: false, message: 'Invalid or expired token' },
+        { success: false, message: 'Invalid token' },
         { status: 401 }
       );
     }
-
-    return decoded;
   } catch (error) {
+    console.error('Auth middleware error:', error);
     return NextResponse.json(
       { success: false, message: 'Authentication error' },
-      { status: 401 }
+      { status: 500 }
     );
   }
-};
+}
+
+// For testing/development purposes, this function creates a mock token
+export function createMockToken(userId: string) {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '1d' });
+}
 
 // Role-based authorization middleware
 export const authorizeRoles = (allowedRoles: string[]) => {

@@ -90,6 +90,11 @@ const Dashboard = () => {
   const [isNewFieldModalOpen, setIsNewFieldModalOpen] = useState<boolean>(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [cropAnalysis, setCropAnalysis] = useState<any>(null);
+  const [showPhotoUploader, setShowPhotoUploader] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Get weather icon based on condition
   const getWeatherIcon = (condition: string) => {
@@ -189,6 +194,61 @@ const Dashboard = () => {
   // Handle returning to the main dashboard
   const handleBackToMainDashboard = () => {
     setSelectedFieldId(null);
+  };
+
+  // Handle photo change
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        if (event.target && event.target.result) {
+          setPreviewImage(event.target.result as string);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle photo upload
+  const handlePhotoUpload = async () => {
+    if (!previewImage) return;
+    
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      // Create form data to upload the image
+      const formData = new FormData();
+      // Convert base64 to blob
+      const blob = await fetch(previewImage).then(r => r.blob());
+      formData.append('image', blob, 'plant-image.jpg');
+      
+      // Check if selectedFieldId is not null before appending
+      if (selectedFieldId) {
+        formData.append('fieldId', selectedFieldId);
+      } else {
+        throw new Error('No field selected');
+      }
+      
+      // Send to your API endpoint for crop disease detection
+      const response = await axios.post('/api/crop-health/analyze', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // Update state with the analysis results
+      setCropAnalysis(response.data.data);
+      setShowPhotoUploader(false);
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      setUploadError(error.response?.data?.message || 'Failed to analyze image');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // If a field is selected, show the field dashboard

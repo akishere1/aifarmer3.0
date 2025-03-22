@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
-import { FiArrowLeft, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiCamera, FiUpload } from 'react-icons/fi';
 import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
 
 // Register ChartJS components
@@ -76,6 +76,11 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [cropAnalysis, setCropAnalysis] = useState<any>(null);
+  const [showPhotoUploader, setShowPhotoUploader] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
   // Get weather icon based on condition
   const getWeatherIcon = (condition: string) => {
@@ -163,6 +168,61 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         borderWidth: 1,
       },
     ],
+  };
+  
+  // Handle photo change
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        if (event.target && event.target.result) {
+          setPreviewImage(event.target.result as string);
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle photo upload
+  const handlePhotoUpload = async () => {
+    if (!previewImage) return;
+    
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      // Create form data to upload the image
+      const formData = new FormData();
+      // Convert base64 to blob
+      const blob = await fetch(previewImage).then(r => r.blob());
+      formData.append('image', blob, 'plant-image.jpg');
+      
+      // Check if fieldId is not null before appending
+      if (fieldId) {
+        formData.append('fieldId', fieldId);
+      } else {
+        throw new Error('No field selected');
+      }
+      
+      // Send to your API endpoint for crop disease detection
+      const response = await axios.post('/api/crop-health/analyze', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // Update state with the analysis results
+      setCropAnalysis(response.data.data);
+      setShowPhotoUploader(false);
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      setUploadError(error.response?.data?.message || 'Failed to analyze image');
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   if (loading && !fieldData) {
@@ -388,67 +448,175 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
           </div>
         </div>
         
-        {/* Soil Health */}
+        {/* Replace Soil Health with Crop Health */}
         <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Soil Health</h2>
+          <h2 className="text-xl font-semibold mb-4">Crop Health</h2>
           
-          {fieldData?.soil ? (
-            <>
-              <div className="mb-6">
-                <h3 className="text-center text-gray-600 mb-1">Soil Health Score</h3>
-                <div className="flex justify-center">
-                  <div className="relative w-36 h-36">
-                    <div className="absolute inset-0 rounded-full border-8 border-gray-200"></div>
-                    <div 
-                      className="absolute inset-0 rounded-full border-8"
-                      style={{ 
-                        borderColor: `${fieldData.soil.healthScore > 70 ? 'rgb(34, 197, 94)' : fieldData.soil.healthScore > 40 ? 'rgb(234, 179, 8)' : 'rgb(239, 68, 68)'}`,
-                        clipPath: `polygon(50% 50%, 50% 0%, ${fieldData.soil.healthScore > 25 ? '100% 0%' : `${50 + (fieldData.soil.healthScore/25) * 50}% ${50 - (fieldData.soil.healthScore/25) * 50}%`}, ${
-                          fieldData.soil.healthScore > 50 ? '100% 100%' : fieldData.soil.healthScore > 25 ? `100% ${(fieldData.soil.healthScore-25)/25 * 100}%` : '50% 50%'
-                        }, ${
-                          fieldData.soil.healthScore > 75 ? '0% 100%' : fieldData.soil.healthScore > 50 ? `${100 - (fieldData.soil.healthScore-50)/25 * 100}% 100%` : '50% 50%'
-                        }, ${
-                          fieldData.soil.healthScore > 75 ? `0% ${100 - (fieldData.soil.healthScore-75)/25 * 100}%` : '50% 50%'
-                        })` 
-                      }}
-                    ></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-3xl font-bold">{fieldData.soil.healthScore}</span>
-                    </div>
+          {cropAnalysis ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-gray-600 font-medium">Health Status:</h3>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  cropAnalysis.healthScore > 70 ? 'bg-green-100 text-green-800' : 
+                  cropAnalysis.healthScore > 40 ? 'bg-yellow-100 text-yellow-800' : 
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {cropAnalysis.healthScore > 70 ? 'Healthy' : 
+                  cropAnalysis.healthScore > 40 ? 'Moderate' : 'Poor'}
+                </span>
+              </div>
+              
+              <div className="relative pt-1">
+                <div className="flex mb-2 items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold inline-block text-gray-600">
+                      Health Score
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-semibold inline-block text-gray-600">
+                      {cropAnalysis.healthScore}%
+                    </span>
                   </div>
                 </div>
+                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                  <div 
+                    style={{ width: `${cropAnalysis.healthScore}%` }}
+                    className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
+                      cropAnalysis.healthScore > 70 ? 'bg-green-500' : 
+                      cropAnalysis.healthScore > 40 ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}
+                  ></div>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Soil Moisture:</span>
-                  <span className="font-medium">{fieldData.soil.moisture}%</span>
+              {cropAnalysis.disease && (
+                <div className="mt-4 p-4 border border-red-200 rounded-md bg-red-50">
+                  <h3 className="font-medium text-red-700 mb-2">Disease Detected: {cropAnalysis.disease.name}</h3>
+                  <p className="text-sm text-gray-700 mb-3">{cropAnalysis.disease.description}</p>
+                  
+                  <h4 className="font-medium text-gray-700 mb-1">Recommended Treatment:</h4>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    {cropAnalysis.disease.treatments.map((treatment: string, index: number) => (
+                      <li key={index}>{treatment}</li>
+                    ))}
+                  </ul>
+                  
+                  <h4 className="font-medium text-gray-700 mt-3 mb-1">Recommended Chemicals:</h4>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {cropAnalysis.disease.chemicals.map((chemical: {name: string, dosage: string}, index: number) => (
+                      <div key={index} className="bg-white p-2 rounded border border-gray-200 text-sm">
+                        <span className="font-medium">{chemical.name}</span>
+                        <p className="text-xs text-gray-600 mt-1">{chemical.dosage}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Soil pH:</span>
-                  <span className="font-medium">{fieldData.soil.pH}</span>
+              )}
+              
+              <div className="mt-4">
+                <h3 className="text-gray-600 font-medium mb-2">Previous Analysis:</h3>
+                <div className="space-y-2">
+                  {cropAnalysis.history.map((item: {date: string, status: string}, index: number) => (
+                    <div key={index} className="text-sm flex justify-between border-b pb-1">
+                      <span>{new Date(item.date).toLocaleDateString()}</span>
+                      <span className={`${
+                        item.status === 'Healthy' ? 'text-green-600' : 
+                        item.status === 'Moderate' ? 'text-yellow-600' : 
+                        'text-red-600'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
               
-              <h3 className="text-gray-600 mt-4 mb-1">Soil Nutrition Levels</h3>
-              <div className="h-40">
-                <Bar 
-                  data={soilNutritionData}
-                  options={{
-                    maintainAspectRatio: false,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        max: 100
-                      }
-                    }
-                  }}
+              <button
+                onClick={() => setShowPhotoUploader(true)}
+                className="mt-4 w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Upload New Photo
+              </button>
+            </div>
+          ) : showPhotoUploader ? (
+            <div className="photo-upload-section">
+              <h3 className="text-gray-600 font-medium mb-3">Upload Plant Photo</h3>
+              
+              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center">
+                {previewImage ? (
+                  <div className="mb-4">
+                    <img 
+                      src={previewImage} 
+                      alt="Plant preview" 
+                      className="mx-auto max-h-48 rounded-md" 
+                    />
+                    <button 
+                      onClick={() => setPreviewImage(null)}
+                      className="mt-2 text-red-600 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <div className="mx-auto w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                      <FiCamera className="h-12 w-12 text-blue-400" />
+                    </div>
+                    <p className="text-gray-600">Drag & drop your photo here or click to browse</p>
+                  </div>
+                )}
+                
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handlePhotoChange} 
+                  className="hidden" 
+                  id="cropPhotoInput" 
                 />
+                <label 
+                  htmlFor="cropPhotoInput"
+                  className="inline-block py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition"
+                >
+                  Select Photo
+                </label>
               </div>
-            </>
+              
+              <div className="mt-4 flex justify-between">
+                <button
+                  onClick={() => setShowPhotoUploader(false)}
+                  className="py-2 px-4 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePhotoUpload}
+                  disabled={!previewImage || isUploading}
+                  className="py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:bg-green-300"
+                >
+                  {isUploading ? 'Analyzing...' : 'Analyze Photo'}
+                </button>
+              </div>
+              
+              {uploadError && (
+                <div className="mt-2 text-red-600 text-sm">
+                  {uploadError}
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="h-40 flex items-center justify-center">
-              <span className="text-gray-500">Soil data loading...</span>
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="bg-blue-100 w-24 h-24 rounded-full flex items-center justify-center mb-4">
+                <FiCamera className="h-12 w-12 text-blue-600" />
+              </div>
+              <p className="text-gray-600 mb-4">Upload photos of your plants to check for diseases</p>
+              <button
+                onClick={() => setShowPhotoUploader(true)}
+                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Upload Plant Photo
+              </button>
             </div>
           )}
         </div>
