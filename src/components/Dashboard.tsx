@@ -418,8 +418,8 @@ const Dashboard = () => {
               </a>
             </div>
           ))}
-        </div>
-      </div>
+            </div>
+          </div>
     );
   };
 
@@ -485,7 +485,7 @@ const Dashboard = () => {
                 <li>• Sugarcane: Slight decrease due to surplus production</li>
                 <li>• Cotton: Gradually decreasing due to international trends</li>
               </ul>
-            </div>
+          </div>
           </div>
         </div>
       </div>
@@ -512,8 +512,8 @@ const Dashboard = () => {
                 <FiRefreshCw className={`${refreshing ? 'animate-spin' : ''}`} />
                 {refreshing ? 'Refreshing...' : 'Refresh Data'}
               </button>
-            </div>
-
+                </div>
+                
             {/* Overall Growth Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
               <div className="bg-white rounded-lg p-6 shadow-sm border border-emerald-100 flex flex-col items-center">
@@ -522,40 +522,40 @@ const Dashboard = () => {
                   <div className="absolute inset-0 rounded-full border-4 border-emerald-100"></div>
                   <div 
                     className="absolute inset-0 rounded-full border-4 border-emerald-500"
-                    style={{ 
-                      clipPath: `polygon(50% 50%, 50% 0%, ${(growthData?.summary.avgGrowthPercentage || 45) > 25 ? '100% 0%' : `${50 + ((growthData?.summary.avgGrowthPercentage || 45)/25) * 50}% ${50 - ((growthData?.summary.avgGrowthPercentage || 45)/25) * 50}%`}, ${
-                        (growthData?.summary.avgGrowthPercentage || 45) > 50 ? '100% 100%' : (growthData?.summary.avgGrowthPercentage || 45) > 25 ? `100% ${((growthData?.summary.avgGrowthPercentage || 45)-25)/25 * 100}%` : '50% 50%'
-                      }, ${
-                        (growthData?.summary.avgGrowthPercentage || 45) > 75 ? '0% 100%' : (growthData?.summary.avgGrowthPercentage || 45) > 50 ? `${100 - ((growthData?.summary.avgGrowthPercentage || 45)-50)/25 * 100}% 100%` : '50% 50%'
-                      }, ${
-                        (growthData?.summary.avgGrowthPercentage || 45) > 75 ? `0% ${100 - ((growthData?.summary.avgGrowthPercentage || 45)-75)/25 * 100}%` : '50% 50%'
-                      })` 
-                    }}
-                  ></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
+                style={{ 
+                  clipPath: `polygon(50% 50%, 50% 0%, ${(growthData?.summary.avgGrowthPercentage || 45) > 25 ? '100% 0%' : `${50 + ((growthData?.summary.avgGrowthPercentage || 45)/25) * 50}% ${50 - ((growthData?.summary.avgGrowthPercentage || 45)/25) * 50}%`}, ${
+                    (growthData?.summary.avgGrowthPercentage || 45) > 50 ? '100% 100%' : (growthData?.summary.avgGrowthPercentage || 45) > 25 ? `100% ${((growthData?.summary.avgGrowthPercentage || 45)-25)/25 * 100}%` : '50% 50%'
+                  }, ${
+                    (growthData?.summary.avgGrowthPercentage || 45) > 75 ? '0% 100%' : (growthData?.summary.avgGrowthPercentage || 45) > 50 ? `${100 - ((growthData?.summary.avgGrowthPercentage || 45)-50)/25 * 100}% 100%` : '50% 50%'
+                  }, ${
+                    (growthData?.summary.avgGrowthPercentage || 45) > 75 ? `0% ${100 - ((growthData?.summary.avgGrowthPercentage || 45)-75)/25 * 100}%` : '50% 50%'
+                  })` 
+                }}
+              ></div>
+              <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-2xl font-bold text-emerald-700">{growthData?.summary.avgGrowthPercentage || 45}%</span>
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm text-center">Average growth across all fields</p>
-              </div>
-              
+          </div>
+          
               <div className="bg-white rounded-lg p-6 shadow-sm border border-amber-100 flex flex-col items-center">
                 <h3 className="text-lg font-medium mb-4 text-amber-800">Harvest Time Left</h3>
                 <div className="relative w-32 h-32 mb-4">
                   <div className="absolute inset-0 rounded-full border-4 border-amber-100"></div>
-                  <div 
-                    className="absolute inset-0 rounded-full border-4 border-amber-500"
-                    style={{ 
-                      clipPath: `polygon(50% 50%, 50% 0%, ${(growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 25 ? '100% 0%' : `${50 + ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)/25) * 50}% ${50 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)/25) * 50}%`}, ${
-                        (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 50 ? '100% 100%' : (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 25 ? `100% ${((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-25)/25 * 100}%` : '50% 50%'
-                      }, ${
-                        (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 75 ? '0% 100%' : (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 50 ? `${100 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-50)/25 * 100}% 100%` : '50% 50%'
-                      }, ${
-                        (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 75 ? `0% ${100 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-75)/25 * 100}%` : '50% 50%'
-                      })` 
-                    }}
-                  ></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
+              <div 
+                className="absolute inset-0 rounded-full border-4 border-amber-500"
+                style={{ 
+                  clipPath: `polygon(50% 50%, 50% 0%, ${(growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 25 ? '100% 0%' : `${50 + ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)/25) * 50}% ${50 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)/25) * 50}%`}, ${
+                    (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 50 ? '100% 100%' : (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 25 ? `100% ${((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-25)/25 * 100}%` : '50% 50%'
+                  }, ${
+                    (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 75 ? '0% 100%' : (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 50 ? `${100 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-50)/25 * 100}% 100%` : '50% 50%'
+                  }, ${
+                    (growthData?.summary.avgHarvestTimeLeftPercentage || 65) > 75 ? `0% ${100 - ((growthData?.summary.avgHarvestTimeLeftPercentage || 65)-75)/25 * 100}%` : '50% 50%'
+                  })` 
+                }}
+              ></div>
+              <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-2xl font-bold text-amber-700">{growthData?.summary.avgHarvestTimeLeftPercentage || 65}%</span>
                   </div>
                 </div>
@@ -589,14 +589,14 @@ const Dashboard = () => {
             <h2 className="text-xl font-bold text-emerald-800 mb-4">Fields Progress</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {fields.map((field, index) => (
-                <div 
-                  key={field._id}
+              <div 
+                key={field._id}
                   className={`bg-white rounded-lg p-6 shadow-sm cursor-pointer hover:shadow-md transition-shadow border ${activeField === index ? 'border-emerald-500 ring-2 ring-emerald-200' : 'border-emerald-100'}`}
-                  onClick={() => {
-                    setActiveField(index);
-                    handleFieldSelect(field._id);
-                  }}
-                >
+                onClick={() => {
+                  setActiveField(index);
+                  handleFieldSelect(field._id);
+                }}
+              >
                   <h3 className="text-lg font-medium mb-4 text-emerald-800">{field.location}</h3>
                   
                   {/* Growth Progress Bar */}
@@ -651,9 +651,9 @@ const Dashboard = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
-              
+              </div>
+            ))}
+            
               {/* Add Field Card */}
               {fields.length === 0 ? (
                 <div 
@@ -705,7 +705,7 @@ const Dashboard = () => {
             <div className="flex flex-col">
               <span className="font-medium text-gray-800">{user?.name || 'Loading...'}</span>
               <span className="text-xs text-gray-500">{user?.role || ''}</span>
-            </div>
+              </div>
           </div>
           
           <button 
@@ -755,20 +755,20 @@ const Dashboard = () => {
           onSuccess={handleFieldAdded} 
         />
       )}
-      
-      {/* Loading State */}
-      {loading && !refreshing && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+        
+        {/* Loading State */}
+        {loading && !refreshing && (
+          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500"></div>
-        </div>
-      )}
-      
-      {/* Error State */}
-      {error && (
-        <div className="absolute bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-        </div>
-      )}
+          </div>
+        )}
+        
+        {/* Error State */}
+        {error && (
+          <div className="absolute bottom-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <p>{error}</p>
+          </div>
+        )}
     </div>
   );
 };
