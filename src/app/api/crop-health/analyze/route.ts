@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware } from '@/lib/auth';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 // In a production environment, you would integrate with actual ML services
 // like TensorFlow, PyTorch, Google Cloud Vision AI, Azure Computer Vision, etc.
 
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Connect to the database
-    await connectToDatabase();
+    await connectDB();
 
     // Parse form data from request
     const formData = await req.formData();

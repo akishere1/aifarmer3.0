@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 import Growth from '@/models/Growth';
 
@@ -31,7 +31,7 @@ export async function GET(
     }
 
     // Connect to database
-    await dbConnect();
+    await connectDB();
     
     // Get field data - don't filter by userId
     const field = await Field.findOne({

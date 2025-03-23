@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 
 export async function GET(request: NextRequest) {
   try {
     // Connect to database
-    await connectToDatabase();
+    await connectDB();
     
     // For testing purposes, get first user in database
     const user = await User.findOne().select('-password');

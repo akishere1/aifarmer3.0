@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware, authorizeRoles } from '@/lib/auth';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 
 export async function GET(req: NextRequest) {
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Connect to the database
-    await connectToDatabase();
+    await connectDB();
 
     // Fetch all fields for the authenticated farmer
     const fields = await Field.find({ farmer: (user as any).id }).sort({ createdAt: -1 });

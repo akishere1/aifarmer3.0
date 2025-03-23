@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 
 interface Props {
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     // Connect to database
-    await dbConnect();
+    await connectDB();
     
     // Get field data
     const field = await Field.findById(fieldId);

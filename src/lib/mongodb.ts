@@ -1,40 +1,26 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/farm-dashboard';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aifarm';
 
-// Global is used here to maintain a cached connection across hot reloads
-// in development. This prevents connections growing exponentially.
-let cached = global as any;
-if (!cached.mongoose) {
-  cached.mongoose = { conn: null, promise: null };
-}
+let cachedConnection: typeof mongoose | null = null;
 
-async function dbConnect() {
-  if (cached.mongoose.conn) {
-    return cached.mongoose.conn;
+export async function connectDB() {
+  if (cachedConnection) {
+    return cachedConnection;
   }
 
-  if (!cached.mongoose.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.mongoose.promise = mongoose.connect(MONGODB_URI, opts)
-      .then(mongoose => {
-        console.log('Connected to MongoDB');
-        return mongoose;
-      });
+  if (mongoose.connections[0].readyState) {
+    cachedConnection = mongoose;
+    return cachedConnection;
   }
 
   try {
-    cached.mongoose.conn = await cached.mongoose.promise;
-  } catch (e) {
-    cached.mongoose.promise = null;
-    console.error('Error connecting to MongoDB:', e);
-    throw e;
+    const connection = await mongoose.connect(MONGODB_URI);
+    cachedConnection = connection;
+    console.log('Connected to MongoDB');
+    return connection;
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw new Error('Failed to connect to database');
   }
-
-  return cached.mongoose.conn;
-}
-
-export default dbConnect; 
+} 

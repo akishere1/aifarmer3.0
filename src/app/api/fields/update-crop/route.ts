@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 import Growth from '@/models/Growth';
 
@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest) {
     const { fieldId, selectedCrop } = data;
 
     // Connect to database
-    await dbConnect();
+    await connectDB();
 
     // Update the field with the selected crop
     const field = await Field.findOneAndUpdate(

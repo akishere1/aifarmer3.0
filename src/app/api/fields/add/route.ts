@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 
 interface RequestBody {
@@ -14,7 +14,7 @@ interface RequestBody {
 export async function POST(req: NextRequest) {
   try {
     // Connect to the database
-    await connectToDatabase();
+    await connectDB();
 
     // Parse request body
     const body: RequestBody = await req.json();

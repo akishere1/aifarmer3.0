@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Crop from '@/models/Crop';
 import { authMiddleware, authorizeRoles } from '@/lib/auth';
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectToDatabase();
+    await connectDB();
 
     const crop = await Crop.findById(params.id);
 
@@ -51,7 +51,7 @@ export async function PUT(
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     const body = await req.json();
     
@@ -100,7 +100,7 @@ export async function DELETE(
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     // Find and delete crop
     const crop = await Crop.findByIdAndDelete(params.id);

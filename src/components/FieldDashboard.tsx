@@ -2,8 +2,9 @@ import React, { useState, useEffect, JSX } from 'react';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
-import { FiArrowLeft, FiRefreshCw, FiCamera, FiUpload, FiCheck, FiDatabase } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiCamera, FiUpload, FiCheck, FiDatabase, FiUsers } from 'react-icons/fi';
 import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
+import MarketplaceConnect from './MarketplaceConnect';
 
 // Register ChartJS components
 ChartJS.register(
@@ -439,31 +440,35 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     try {
       console.log('Sending field data to ML model...');
       
-      // Define mappings for categorical to numeric values
-      const soilTypeMap: Record<string, number> = {
-        'clay': 0,
-        'loamy': 1,
-        'sandy': 2,
-        'silt': 3,
-        'saline': 4,
-        'peaty': 5
-      };
+      // Get numeric values for soil type and season
+      let soilTypeValue = 0; // default
+      switch(fieldData.field.soilType) {
+        case 'clay': soilTypeValue = 0; break;
+        case 'loamy': soilTypeValue = 1; break;
+        case 'sandy': soilTypeValue = 2; break;
+        case 'silt': soilTypeValue = 3; break;
+        case 'saline': soilTypeValue = 4; break;
+        case 'peaty': soilTypeValue = 5; break;
+      }
       
-      const seasonMap: Record<string, number> = {
-        'Kharif': 0,
-        'Rabi': 1,
-        'Zaid': 2
-      };
+      let seasonValue = 0; // default
+      switch(fieldData.field.season) {
+        case 'Kharif': seasonValue = 0; break;
+        case 'Rabi': seasonValue = 1; break;
+        case 'Zaid': seasonValue = 2; break;
+      }
       
-      // Simplified payload with only necessary fields and numeric soil_type
+      // Only send field information, without NPK values
       const payload = {
-        N: 50, // Default N value
-        P: 50, // Default P value
-        K: 50, // Default K value
         temperature: fieldData.field.temperature,
         humidity: 60, // Default humidity value
         ph: 7.0, // Default pH value
-        rainfall: fieldData.field.waterLevel // Using water level as rainfall
+        rainfall: 1823, // Default rainfall value in mm
+        water_level: fieldData.field.waterLevel,
+        soil_type: soilTypeValue, // Use numeric value
+        land_area: fieldData.field.landArea,
+        location: fieldData.field.location,
+        season: seasonValue // Use numeric value
       };
       
       console.log('Prediction payload:', payload);
@@ -473,7 +478,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'X-API-Key': 'aifarm-ml-key' // Add API key for authentication
         },
         body: JSON.stringify(payload)
       });
@@ -1286,6 +1292,27 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
               <span className="text-gray-500">No recommendations available</span>
             </div>
           )}
+        </div>
+
+        {/* MarketplaceConnect - Direct Farmer-Buyer Connection */}
+        <div className="col-span-1 md:col-span-3 mt-6">
+          <h2 className="text-xl font-bold text-emerald-800 mb-4 flex items-center bg-gradient-to-r from-emerald-50 to-transparent p-3 rounded-lg border-l-4 border-emerald-500 animate-fadeIn">
+            <FiUsers className="mr-3 text-emerald-600" size={22} />
+            <span>Marketplace - Connect with Buyers</span>
+            <span className="ml-2 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-sm rounded-full">New</span>
+          </h2>
+          <MarketplaceConnect 
+            farmerLocation={fieldData?.field.location || 'Bengaluru, Karnataka'}
+            farmerCrops={cropPrediction ? 
+              [cropPrediction.predictedCrop].concat(
+                cropPrediction.suitableCrops.slice(1, 3).map(c => c.crop)
+              ) : 
+              fieldData?.field.soilType === 'clay' ? ['Rice', 'Wheat', 'Cotton'] : 
+              fieldData?.field.soilType === 'loamy' ? ['Vegetables', 'Fruits', 'Maize'] :
+              fieldData?.field.soilType === 'sandy' ? ['Pulses', 'Groundnut', 'Millets'] :
+              ['Rice', 'Vegetables', 'Fruits']
+            }
+          />
         </div>
       </div>
       

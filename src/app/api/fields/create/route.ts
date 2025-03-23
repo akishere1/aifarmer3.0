@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware } from '@/lib/auth';
-import dbConnect from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 import Recommendation from '@/models/Recommendation';
 import axios from 'axios';
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Connect to database
-    await dbConnect();
+    await connectDB();
 
     // Create new field object
     const newField = new Field({

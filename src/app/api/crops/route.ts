@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Crop from '@/models/Crop';
 import { authMiddleware, authorizeRoles } from '@/lib/auth';
 
 // Get all crops
 export async function GET(req: NextRequest) {
   try {
-    await connectToDatabase();
+    await connectDB();
 
     const url = new URL(req.url);
     const search = url.searchParams.get('search') || '';
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     const body = await req.json();
     

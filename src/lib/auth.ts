@@ -2,6 +2,9 @@ import jwt, { Secret, SignOptions, JwtPayload as JsonWebTokenPayload } from 'jso
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { IUser } from '@/models/User';
+// Remove next-auth import as it's not installed
+// We don't need this import as we're not using next-auth
+// import CredentialsProvider from "next-auth/providers/credentials";
 
 // Use environment variables with fallbacks for development
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_development_secret_key';
@@ -123,4 +126,7 @@ export const authorizeRoles = (allowedRoles: string[]) => {
 
     return user;
   };
-}; 
+};
+
+// Next Auth configuration
+// This section is removed as we're not using NextAuth

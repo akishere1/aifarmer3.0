@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 
 // Mock crop data for different seasons and soil types
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     // No authentication required
     
     // Connect to the database
-    await connectToDatabase();
+    await connectDB();
 
     // Get field ID from query parameters (optional)
     const url = new URL(req.url);

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
 
 export async function GET(req: NextRequest) {
   try {
     // Connect to the database
-    await connectToDatabase();
+    await connectDB();
     
     // Fetch all fields
     const fields = await Field.find().sort({ createdAt: -1 });

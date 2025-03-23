@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Query from '@/models/Query';
 import { authMiddleware } from '@/lib/auth';
 
 // Get all queries
 export async function GET(req: NextRequest) {
   try {
-    await connectToDatabase();
+    await connectDB();
 
     const url = new URL(req.url);
     const search = url.searchParams.get('search') || '';
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     const body = await req.json();
     
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     const query = await Query.create({
       ...body,
       askedBy: user.id,
-    });
+      });
 
     return NextResponse.json(
       { success: true, message: 'Query added successfully', query },

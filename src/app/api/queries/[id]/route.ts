@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import Query from '@/models/Query';
 import { authMiddleware } from '@/lib/auth';
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectToDatabase();
+    await connectDB();
 
     const query = await Query.findById(params.id)
       .populate('askedBy', 'name role')
@@ -52,7 +52,7 @@ export async function PUT(
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     // Find query
     const query = await Query.findById(params.id);
@@ -113,7 +113,7 @@ export async function DELETE(
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
     
     // Find query
     const query = await Query.findById(params.id);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectToDatabase from '@/lib/mongodb';
+import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { authMiddleware } from '@/lib/auth';
 
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       return user;
     }
 
-    await connectToDatabase();
+    await connectDB();
 
     // Get user from database
     const dbUser = await User.findById(user.id);
