@@ -84,10 +84,21 @@ interface DiseaseInfo {
   pesticideImage?: string;
 }
 
+// Add to CropAnalysis interface to include historical data for graphs
 interface CropAnalysis {
   healthScore: number;
   disease: DiseaseInfo | null;
   history: Array<{date: string, status: string}>;
+  // Add new fields for graph data
+  healthHistory: Array<{date: string, score: number}>;
+  nutrientLevels: {
+    nitrogen: number;
+    phosphorus: number;
+    potassium: number;
+    calcium: number;
+    magnesium: number;
+  };
+  leafAreaIndex: Array<{date: string, value: number}>;
 }
 
 interface FieldDashboardProps {
@@ -112,6 +123,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
   const [useMockData, setUseMockData] = useState<boolean>(false);
   // Add state for the selected file
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [predictionResult, setPredictionResult] = useState<string | null>(null);
+  const [predictionConfidence, setPredictionConfidence] = useState<number | null>(null);
   
   // Mock data for crop prediction when API is unavailable
   const mockCropPrediction: CropPrediction = {
@@ -127,7 +140,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     lastUpdated: new Date().toISOString()
   };
   
-  // Mock data for crop analysis when disease detection API is unavailable
+  // Update mock data for crop analysis to include graph data
   const mockCropAnalysis = {
     healthScore: 75,
     disease: {
@@ -146,6 +159,30 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     },
     history: [
       { date: new Date().toISOString(), status: 'Moderate' }
+    ],
+    // Add new mock data for graphs
+    healthHistory: [
+      { date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(), score: 85 },
+      { date: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), score: 82 },
+      { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), score: 78 },
+      { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), score: 75 },
+      { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), score: 72 },
+      { date: new Date().toISOString(), score: 75 }
+    ],
+    nutrientLevels: {
+      nitrogen: 65,
+      phosphorus: 72,
+      potassium: 58,
+      calcium: 81,
+      magnesium: 76
+    },
+    leafAreaIndex: [
+      { date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(), value: 3.2 },
+      { date: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), value: 3.5 },
+      { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), value: 3.8 },
+      { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), value: 4.1 },
+      { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), value: 4.3 },
+      { date: new Date().toISOString(), value: 4.5 }
     ]
   };
   
@@ -361,6 +398,30 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
           },
           history: [
             { date: new Date().toISOString(), status: isHealthy ? 'Healthy' : 'Poor' }
+          ],
+          // Add generated graph data based on detection result
+          healthHistory: [
+            { date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(), score: isHealthy ? 85 : 65 },
+            { date: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), score: isHealthy ? 87 : 60 },
+            { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), score: isHealthy ? 86 : 55 },
+            { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), score: isHealthy ? 83 : 45 },
+            { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), score: isHealthy ? 81 : 40 },
+            { date: new Date().toISOString(), score: healthScore }
+          ],
+          nutrientLevels: {
+            nitrogen: isHealthy ? 75 : 55,
+            phosphorus: isHealthy ? 72 : 50,
+            potassium: isHealthy ? 68 : 45,
+            calcium: isHealthy ? 81 : 60,
+            magnesium: isHealthy ? 76 : 55
+          },
+          leafAreaIndex: [
+            { date: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000).toISOString(), value: isHealthy ? 3.2 : 2.5 },
+            { date: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), value: isHealthy ? 3.5 : 2.3 },
+            { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), value: isHealthy ? 3.8 : 2.1 },
+            { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), value: isHealthy ? 4.1 : 1.9 },
+            { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), value: isHealthy ? 4.3 : 1.7 },
+            { date: new Date().toISOString(), value: isHealthy ? 4.5 : 1.5 }
           ]
         };
         
@@ -410,6 +471,19 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         history: [
           { date: new Date().toISOString(), status: 'Error - Using Mock Data' },
           ...mockCropAnalysis.history
+        ],
+        healthHistory: [
+          { date: new Date().toISOString(), score: 65 },
+          ...mockCropAnalysis.healthHistory.slice(1)
+        ],
+        nutrientLevels: {
+          ...mockCropAnalysis.nutrientLevels,
+          nitrogen: 55,
+          phosphorus: 60
+        },
+        leafAreaIndex: [
+          { date: new Date().toISOString(), value: 3.0 },
+          ...mockCropAnalysis.leafAreaIndex.slice(1)
         ]
       };
       
@@ -502,28 +576,17 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
       
       console.log('ML model response:', result);
       
-      // Convert the API result to our application's format
-      const cropPredictionResult: CropPrediction = {
-        predictedCrop: result.prediction || 'Unknown',
-        confidence: 85,
-        suitableCrops: [
-          { crop: result.prediction || 'Unknown', score: 85 },
-          { crop: 'Wheat', score: 80 },
-          { crop: 'Maize', score: 75 },
-          { crop: 'Cotton', score: 70 },
-          { crop: 'Sugarcane', score: 65 }
-        ],
-        lastUpdated: new Date().toISOString()
-      };
+      // Set prediction results in state
+      setPredictionResult(result.prediction);
+      setPredictionConfidence(result.confidence || null);
       
-      setCropPrediction(cropPredictionResult);
-      
+      return result;
     } catch (error) {
       console.error('Error predicting crop:', error);
-      
-      // Use mock data when API call fails
-      setUseMockData(true);
-      setCropPrediction(mockCropPrediction);
+      // Reset prediction state
+      setPredictionResult(null);
+      setPredictionConfidence(null);
+      return null;
     } finally {
       setPredictingCrop(false);
     }
@@ -768,6 +831,105 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     );
   };
   
+  // Inside the component, add new variables for the chart data
+  // Add this code where other chart data is defined (before return):
+
+  // Prepare crop health history data for chart
+  const healthHistoryChartData = {
+    labels: cropAnalysis?.healthHistory?.map(item => new Date(item.date).toLocaleDateString()) || [],
+    datasets: [
+      {
+        label: 'Crop Health Score',
+        data: cropAnalysis?.healthHistory?.map(item => item.score) || [],
+        borderColor: 'rgba(52, 211, 153, 1)',
+        backgroundColor: 'rgba(52, 211, 153, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  // Prepare leaf area index data for chart
+  const leafAreaChartData = {
+    labels: cropAnalysis?.leafAreaIndex?.map(item => new Date(item.date).toLocaleDateString()) || [],
+    datasets: [
+      {
+        label: 'Leaf Area Index',
+        data: cropAnalysis?.leafAreaIndex?.map(item => item.value) || [],
+        borderColor: 'rgba(59, 130, 246, 1)',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  // Prepare nutrient levels data for chart
+  const nutrientLevelsChartData = {
+    labels: cropAnalysis?.nutrientLevels ? Object.keys(cropAnalysis.nutrientLevels).map(key => 
+      key.charAt(0).toUpperCase() + key.slice(1)) : [],
+    datasets: [
+      {
+        label: 'Nutrient Levels',
+        data: cropAnalysis?.nutrientLevels ? Object.values(cropAnalysis.nutrientLevels) : [],
+        backgroundColor: [
+          'rgba(52, 211, 153, 0.6)',
+          'rgba(59, 130, 246, 0.6)',
+          'rgba(245, 158, 11, 0.6)',
+          'rgba(139, 92, 246, 0.6)',
+          'rgba(236, 72, 153, 0.6)',
+        ],
+        borderColor: [
+          'rgba(52, 211, 153, 1)',
+          'rgba(59, 130, 246, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(139, 92, 246, 1)',
+          'rgba(236, 72, 153, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Options for line charts
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
+  };
+
+  // Options for bar charts
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+      },
+    },
+  };
+  
   return (
     <div className="h-full overflow-auto p-6 bg-emerald-50">
       {/* Header with back button */}
@@ -968,116 +1130,22 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Replace Soil Health with Crop Health */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-emerald-100">
+        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-2 border border-emerald-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-emerald-800">Crop Health</h2>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => {
-                  alert('Testing disease detection API connection...');
-                  
-                  // Create a test file from a small image for testing
-                  const canvas = document.createElement('canvas');
-                  canvas.width = 224;
-                  canvas.height = 224;
-                  
-                  // Draw a simple green plant-like shape
-                  const ctx = canvas.getContext('2d');
-                  ctx!.fillStyle = 'white';
-                  ctx!.fillRect(0, 0, canvas.width, canvas.height);
-                  ctx!.fillStyle = 'green';
-                  ctx!.fillRect(50, 50, 124, 124);
-                  
-                  // Convert to blob
-                  canvas.toBlob((blob) => {
-                    if (!blob) {
-                      alert('Failed to create test image');
-                      return;
-                    }
-                    
-                    // Create a File object from the blob
-                    const testFile = new File([blob], "test-image.jpg", { type: "image/jpeg" });
-                    console.log('Test file created:', testFile.name, testFile.type, testFile.size);
-                    
-                    // Create FormData
-                    const testFormData = new FormData();
-                    testFormData.append('file', testFile);
-                    
-                    // Test API with detailed logging
-                    console.log('Sending test request to:', 'http://127.0.0.1:8000/predict/');
-                    
-                    fetch('http://127.0.0.1:8000/predict/', {
-                      method: 'POST',
-                      body: testFormData,
-                    })
-                    .then(async response => {
-                      console.log('Test response status:', response.status);
-                      console.log('Test response headers:', [...response.headers.entries()]);
-                      
-                      // Get raw response text first
-                      const responseText = await response.text();
-                      console.log('Raw test API response:', responseText);
-                      
-                      // Try to parse as JSON if possible
-                      let data;
-                      try {
-                        data = JSON.parse(responseText);
-                        console.log('Parsed test API response:', data);
-                      } catch (e) {
-                        console.log('Test response is not valid JSON, using as is');
-                        data = responseText;
-                      }
-                      
-                      // Check for API errors even with 200 OK status
-                      if (data && typeof data === 'object' && (data.success === false || data.error)) {
-                        throw new Error(`API model error: ${data.error || 'Unknown model error'}`);
-                      }
-                      
-                      if (!response.ok) {
-                        // Try to get detailed error
-                        throw new Error(`API returned status ${response.status}`);
-                      }
-                      
-                      alert('Disease detection API is online and working at http://127.0.0.1:8000/predict/');
-                      
-                      return data;
-                    })
-                    .then(data => {
-                      // Show formatted result to user
-                      if (typeof data === 'string') {
-                        alert(`API Test Result: ${data}`);
-                      } else {
-                        alert(`API Test Result: ${JSON.stringify(data, null, 2)}`);
-                      }
-                    })
-                    .catch(error => {
-                      console.error('Disease API test failed:', error);
-                      
-                      // More detailed error alert
-                      let errorMessage = `Unable to connect to disease detection API: ${error.message}\n\n`;
-                      errorMessage += 'Troubleshooting tips:\n';
-                      
-                      if (error.message.includes('API model error')) {
-                        // Model-related error
-                        errorMessage += '1. The model is responding but encountered a processing error\n';
-                        errorMessage += '2. Check the disease labels list in your FastAPI model code\n';
-                        errorMessage += '3. Update the model to handle a wider range of disease classes\n';
-                        errorMessage += '4. The model may need to be retrained or reconfigured\n';
-                      } else {
-                        // Connection-related error
-                        errorMessage += '1. Ensure FastAPI server is running at http://127.0.0.1:8000/\n';
-                        errorMessage += '2. Check that CORS is enabled in your FastAPI app\n';
-                        errorMessage += '3. Add proper error handling in your FastAPI app as shown in the solution\n';
-                        errorMessage += '4. Check the FastAPI logs for server-side errors';
-                      }
-                      
-                      alert(errorMessage);
-                    });
-                  }, 'image/jpeg', 0.95);
-                }}
+                onClick={() => setShowPhotoUploader(true)}
+                className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+              >
+                <FiCamera className="h-4 w-4" />
+                <span>Analyze</span>
+              </button>
+              <button
+                onClick={testApiConnection}
                 className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
               >
-                Test Disease API
+                Test API
               </button>
             </div>
           </div>
@@ -1088,19 +1156,19 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
           </div>
           
           {cropAnalysis ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-600 font-medium">Health Status:</h3>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  cropAnalysis.healthScore > 70 ? 'bg-emerald-100 text-emerald-800' : 
+                  cropAnalysis.healthScore > 70 ? 'bg-emerald-100 text-emerald-800' :
                   cropAnalysis.healthScore > 40 ? 'bg-amber-100 text-amber-800' : 
                   'bg-red-100 text-red-800'
                 }`}>
-                  {cropAnalysis.healthScore > 70 ? 'Healthy' : 
+                  {cropAnalysis.healthScore > 70 ? 'Healthy' :
                   cropAnalysis.healthScore > 40 ? 'Moderate' : 'Poor'}
                 </span>
               </div>
-              
+
               <div className="relative pt-1">
                 <div className="flex mb-2 items-center justify-between">
                   <div>
@@ -1115,17 +1183,41 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                   </div>
                 </div>
                 <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                  <div 
+                  <div
                     style={{ width: `${cropAnalysis.healthScore}%` }}
                     className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                      cropAnalysis.healthScore > 70 ? 'bg-emerald-500' : 
-                      cropAnalysis.healthScore > 40 ? 'bg-amber-500' : 
+                      cropAnalysis.healthScore > 70 ? 'bg-emerald-500' :
+                      cropAnalysis.healthScore > 40 ? 'bg-amber-500' :
                       'bg-red-500'
                     }`}
                   ></div>
                 </div>
               </div>
-              
+
+              {/* Add new grid for charts */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-gray-700 font-medium mb-4">Health History</h3>
+                  <div className="h-60">
+                    <Line data={healthHistoryChartData} options={lineChartOptions} />
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                  <h3 className="text-gray-700 font-medium mb-4">Leaf Area Index</h3>
+                  <div className="h-60">
+                    <Line data={leafAreaChartData} options={lineChartOptions} />
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 md:col-span-2">
+                  <h3 className="text-gray-700 font-medium mb-4">Nutrient Levels</h3>
+                  <div className="h-60">
+                    <Bar data={nutrientLevelsChartData} options={barChartOptions} />
+                  </div>
+                </div>
+              </div>
+
               {cropAnalysis.disease && (
                 <div className="mt-4 p-4 border border-red-200 rounded-md bg-red-50">
                   <h3 className="font-medium text-red-700 mb-2">Disease Detected: {cropAnalysis.disease.name}</h3>
@@ -1313,6 +1405,39 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
               ['Rice', 'Vegetables', 'Fruits']
             }
           />
+        </div>
+
+        {/* Add this section to the dashboard JSX where you want to display the prediction */}
+        <div className="mt-8 border rounded-lg p-6 bg-white shadow-md">
+          <h3 className="text-xl font-semibold mb-4">Crop Prediction</h3>
+          
+          {predictingCrop ? (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+              <p>Analyzing field data...</p>
+            </div>
+          ) : predictionResult ? (
+            <div>
+              <p className="text-lg font-medium">Recommended Crop: <span className="text-green-600">{predictionResult}</span></p>
+              {predictionConfidence && (
+                <p className="text-sm text-gray-600">Confidence: {(predictionConfidence * 100).toFixed(1)}%</p>
+              )}
+              <p className="mt-4 text-sm text-gray-500">
+                Based on your field's soil type, climate conditions, and other factors, 
+                this crop is recommended for optimal yield.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p>Click the button below to get crop recommendations based on your field data.</p>
+              <button
+                onClick={predictCrop}
+                className="mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+              >
+                Predict Optimal Crop
+              </button>
+            </div>
+          )}
         </div>
       </div>
       
