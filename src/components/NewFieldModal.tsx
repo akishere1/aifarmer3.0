@@ -57,9 +57,16 @@ const NewFieldModal: React.FC<NewFieldModalProps> = ({ isOpen, onClose, onSucces
       return;
     }
     
+    // Validate water level
+    const waterLevelValue = parseFloat(formData.waterLevel);
+    if (waterLevelValue > 100) {
+      setError('Water level must be between 0 and 100');
+      return;
+    }
+    
     // Convert string values to numbers
     const dataToSubmit = {
-      waterLevel: parseFloat(formData.waterLevel),
+      waterLevel: waterLevelValue,
       soilType: formData.soilType,
       landArea: parseFloat(formData.landArea),
       location: formData.location,
@@ -69,7 +76,7 @@ const NewFieldModal: React.FC<NewFieldModalProps> = ({ isOpen, onClose, onSucces
     
     setLoading(true);
     try {
-      // Submit data to API
+      // Submit data to API without auth headers
       const response = await axios.post('/api/fields/add', dataToSubmit);
       
       if (response.status === 201) {
@@ -130,6 +137,7 @@ const NewFieldModal: React.FC<NewFieldModalProps> = ({ isOpen, onClose, onSucces
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 placeholder="Enter water level"
                 min="0"
+                max="100"
               />
             </div>
             

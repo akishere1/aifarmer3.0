@@ -42,6 +42,11 @@ export default function Login() {
         throw new Error(data.message || 'Login failed');
       }
 
+      // Store token in localStorage
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+
       // Redirect to dashboard on successful login
       router.push('/dashboard');
     } catch (err: any) {

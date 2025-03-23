@@ -32,22 +32,35 @@ export async function POST(req: NextRequest) {
     const token = generateToken(user);
 
     // Set token in cookie
-    setTokenCookie(token);
-
-    // Return user data (without password)
-    const userData = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      location: user.location,
-      phoneNumber: user.phoneNumber,
-    };
-
-    return NextResponse.json(
-      { success: true, message: 'Login successful', user: userData },
+    const response = NextResponse.json(
+      { 
+        success: true, 
+        message: 'Login successful', 
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          location: user.location,
+          phoneNumber: user.phoneNumber,
+        },
+        token // Return token to client
+      },
       { status: 200 }
     );
+
+    // Set cookie for server-side auth as well
+    response.cookies.set({
+      name: 'token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Login error:', error);
     

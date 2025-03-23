@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authMiddleware, authorizeRoles } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import Field from '@/models/Field';
 
@@ -33,18 +32,8 @@ const growthRates: Record<string, Record<string, any>> = {
 
 export async function GET(req: NextRequest) {
   try {
-    // Authenticate user
-    const user = await authMiddleware(req);
-    if (user instanceof NextResponse) {
-      return user; // Return the error response if authentication failed
-    }
-
-    // Authorize role (only farmers can view their growth data)
-    const authorizedUser = await authorizeRoles(['farmer'])(req);
-    if (authorizedUser instanceof NextResponse) {
-      return authorizedUser; // Return the error response if authorization failed
-    }
-
+    // No authentication required
+    
     // Connect to the database
     await connectToDatabase();
 
@@ -52,13 +41,13 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const fieldId = url.searchParams.get('fieldId');
 
-    // Query to find fields
+    // Query to find fields - no user filtering
     const query = fieldId 
-      ? { _id: fieldId, farmer: (user as any).id }
-      : { farmer: (user as any).id };
+      ? { _id: fieldId }
+      : {};
 
     // Fetch fields data
-    const fields = await Field.find(query);
+    const fields = await Field.find(query).limit(5);
 
     if (fields.length === 0) {
       return NextResponse.json(

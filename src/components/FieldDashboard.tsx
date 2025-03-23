@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
-import { FiArrowLeft, FiRefreshCw, FiCamera, FiUpload } from 'react-icons/fi';
+import { FiArrowLeft, FiRefreshCw, FiCamera, FiUpload, FiCheck, FiDatabase } from 'react-icons/fi';
 import { WiDaySunny, WiCloudy, WiRain, WiSnow, WiThunderstorm } from 'react-icons/wi';
 
 // Register ChartJS components
@@ -66,6 +66,14 @@ interface FieldData {
   };
 }
 
+// New interface for the crop prediction
+interface CropPrediction {
+  predictedCrop: string;
+  confidence: number;
+  suitableCrops: Array<{crop: string, score: number}>;
+  lastUpdated: string;
+}
+
 interface FieldDashboardProps {
   fieldId: string;
   onBack: () => void;
@@ -81,6 +89,25 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Add state for crop prediction
+  const [cropPrediction, setCropPrediction] = useState<CropPrediction | null>(null);
+  const [predictingCrop, setPredictingCrop] = useState<boolean>(false);
+  // Add state for mock data mode
+  const [useMockData, setUseMockData] = useState<boolean>(false);
+  
+  // Mock data for crop prediction when API is unavailable
+  const mockCropPrediction: CropPrediction = {
+    predictedCrop: 'Rice',
+    confidence: 92,
+    suitableCrops: [
+      { crop: 'Rice', score: 92 },
+      { crop: 'Wheat', score: 85 },
+      { crop: 'Maize', score: 78 },
+      { crop: 'Cotton', score: 72 },
+      { crop: 'Sugarcane', score: 68 }
+    ],
+    lastUpdated: new Date().toISOString()
+  };
   
   // Get weather icon based on condition
   const getWeatherIcon = (condition: string) => {
@@ -105,7 +132,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
       setLoading(true);
       setError(null);
       
-      // Fetch field details
+      // Fetch field details without authentication
       const response = await axios.get(`/api/fields/${fieldId}`);
       setFieldData(response.data.data);
     } catch (err: any) {
@@ -130,13 +157,13 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
   
   // Prepare growth data for chart
   const growthChartData = {
-    labels: fieldData?.growth.growthHistory.map(item => item.month) || [],
+    labels: fieldData?.growth?.growthHistory?.map(item => item.month) || [],
     datasets: [
       {
         label: 'Growth Rate',
-        data: fieldData?.growth.growthHistory.map(item => item.value) || [],
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        data: fieldData?.growth?.growthHistory?.map(item => item.value) || [],
+        borderColor: 'rgba(16, 185, 129, 1)',
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
         borderWidth: 2,
         tension: 0.4,
         fill: true,
@@ -150,20 +177,20 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     datasets: [
       {
         label: 'Soil Nutrition',
-        data: fieldData ? [
+        data: fieldData?.soil ? [
           fieldData.soil.nutrition.nitrogen,
           fieldData.soil.nutrition.phosphorus,
           fieldData.soil.nutrition.potassium
         ] : [0, 0, 0],
         backgroundColor: [
-          'rgba(54, 162, 235, 0.5)',
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
+          'rgba(59, 130, 246, 0.6)',
+          'rgba(16, 185, 129, 0.6)',
+          'rgba(245, 158, 11, 0.6)',
         ],
         borderColor: [
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(255, 206, 86, 1)',
+          'rgba(59, 130, 246, 1)',
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)',
         ],
         borderWidth: 1,
       },
@@ -225,10 +252,199 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     }
   };
   
+  // Predict crop based on field data
+  const predictCrop = async () => {
+    // If mock data mode is enabled, use mock data instead of API
+    if (useMockData) {
+      setCropPrediction(mockCropPrediction);
+      return;
+    }
+    
+    if (!fieldData) {
+      console.error('No field data available for prediction');
+      return;
+    }
+
+    setPredictingCrop(true);
+    
+    // Format field soil type to match API expectations
+    const getSoilTypeForAPI = (soilType: string): string => {
+      const soilMap: Record<string, string> = {
+        'clay': 'Clay',
+        'loamy': 'Loamy',
+        'sandy': 'Sandy',
+        'silt': 'Alluvial',
+        'saline': 'Black',
+        'peaty': 'Red'
+      };
+      return soilMap[soilType.toLowerCase()] || 'Loamy';
+    };
+    
+    // Format season to match API expectations
+    const getSeasonForAPI = (season: string): string => {
+      const seasonMap: Record<string, string> = {
+        'Kharif': 'Rainy',
+        'Rabi': 'Winter',
+        'Zaid': 'Summer'
+      };
+      return seasonMap[season] || 'Summer';
+    };
+    
+    // Format location to match API expectations
+    const getLocationForAPI = (location: string): string => {
+      if (location.includes('North')) return 'North';
+      if (location.includes('South')) return 'South';
+      if (location.includes('East')) return 'East';
+      if (location.includes('West')) return 'West';
+      return 'North';
+    };
+    
+    // Prepare the API request payload with exact format
+    const payload = {
+      water_level: Number(fieldData.field.waterLevel.toFixed(1)),
+      soil_type: getSoilTypeForAPI(fieldData.field.soilType),
+      land_area: Number(fieldData.field.landArea.toFixed(1)),
+      location: getLocationForAPI(fieldData.field.location),
+      temperature: Number(fieldData.field.temperature.toFixed(1)),
+      season: getSeasonForAPI(fieldData.field.season)
+    };
+    
+    console.log('Sending crop prediction payload:', payload);
+    
+    try {
+      // Try the internal proxy endpoint which will attempt to connect to the external API
+      const response = await fetch('/api/crop-prediction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'mysecureapikey123'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned status ${response.status}: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('API Response:', data);
+      
+      // Format the API response
+      const prediction: CropPrediction = {
+        predictedCrop: data.predicted_crop || 'Wheat',
+        confidence: data.confidence || 85,
+        suitableCrops: Array.isArray(data.suitable_crops) 
+          ? data.suitable_crops.map((crop: any) => ({
+              crop: crop.name || crop.crop || crop,
+              score: crop.score || crop.confidence || 75
+            }))
+          : [{ crop: data.predicted_crop, score: data.confidence }],
+        lastUpdated: new Date().toISOString()
+      };
+      
+      setCropPrediction(prediction);
+      
+    } catch (error) {
+      console.error('Error predicting crop:', error);
+      
+      // Offer to use mock data
+      if (window.confirm('Unable to connect to prediction API. Would you like to use example data instead?')) {
+        setUseMockData(true);
+        setCropPrediction(mockCropPrediction);
+      }
+    } finally {
+      setPredictingCrop(false);
+    }
+  };
+  
+  // Test API connection
+  const testApiConnection = async () => {
+    // Standard test payload for the API
+    const testPayload = {
+      water_level: 50.0,
+      soil_type: "Alluvial",
+      land_area: 10.0,
+      location: "North",
+      temperature: 25.0,
+      season: "Summer"
+    };
+    
+    console.log('Testing API connection with payload:', testPayload);
+    
+    try {
+      // Test direct external API first
+      const externalApiUrl = 'http://127.0.0.1:8000/predict';
+      console.log(`Testing direct connection to external API at ${externalApiUrl}`);
+      
+      const startTime = Date.now();
+      
+      const externalResponse = await fetch(externalApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'mysecureapikey123'
+        },
+        body: JSON.stringify(testPayload)
+      }).catch(error => {
+        console.error('Error connecting to external API:', error);
+        return null;
+      });
+      
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+      
+      // If the external API worked, show its response
+      if (externalResponse && externalResponse.ok) {
+        const data = await externalResponse.json();
+        console.log('External API Test Response:', data);
+        
+        // Display the complete response for debugging
+        const responseDisplay = JSON.stringify(data, null, 2);
+        alert(`✅ External API test successful!\nEndpoint: ${externalApiUrl}\nResponse time: ${responseTime}ms\n\nResponse:\n${responseDisplay}`);
+        return;
+      }
+      
+      // Fall back to proxy endpoint
+      console.log('External API not available, testing proxy endpoint');
+      const proxyResponse = await fetch('/api/crop-prediction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'mysecureapikey123'
+        },
+        body: JSON.stringify(testPayload)
+      });
+      
+      if (!proxyResponse.ok) {
+        const errorText = await proxyResponse.text();
+        throw new Error(`Proxy API returned status ${proxyResponse.status}: ${errorText}`);
+      }
+      
+      const proxyData = await proxyResponse.json();
+      console.log('Proxy API Test Response:', proxyData);
+      
+      // Display the complete response for debugging
+      const proxyResponseDisplay = JSON.stringify(proxyData, null, 2);
+      alert(`✅ Proxy API test successful!\nEndpoint: /api/crop-prediction\n\nResponse:\n${proxyResponseDisplay}\n\nNote: Using fallback data as external API is unavailable.`);
+      
+    } catch (error) {
+      console.error('API test failed:', error);
+      alert('❌ API test failed. Could not connect to any prediction API endpoint. Check the console for details.');
+    }
+  };
+  
+  // Run prediction when field data is available
+  useEffect(() => {
+    if (fieldData) {
+      predictCrop();
+    }
+  }, [fieldData]);
+  
   if (loading && !fieldData) {
     return (
       <div className="h-full w-full flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
@@ -240,7 +456,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
           <p>{error}</p>
           <button 
             onClick={onBack}
-            className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+            className="mt-4 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700"
           >
             Back to Dashboard
           </button>
@@ -249,24 +465,138 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
     );
   }
   
+  // Render crop prediction section
+  const renderCropPrediction = () => {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-3 border border-emerald-100">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-emerald-800">Crop Recommendation</h2>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center">
+              <label htmlFor="mock-data-toggle" className="text-sm text-gray-600 mr-2">
+                Use Mock Data
+              </label>
+              <div className="relative inline-block w-10 mr-2 align-middle select-none">
+                <input 
+                  type="checkbox"
+                  id="mock-data-toggle"
+                  checked={useMockData}
+                  onChange={() => setUseMockData(!useMockData)}
+                  className="sr-only"
+                />
+                <div className={`block h-6 w-10 rounded-full transition-colors ${useMockData ? 'bg-emerald-400' : 'bg-gray-300'}`}></div>
+                <div 
+                  className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${useMockData ? 'transform translate-x-full' : ''}`}
+                ></div>
+              </div>
+            </div>
+            <button
+              onClick={testApiConnection}
+              className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+            >
+              Test API Connection
+            </button>
+          </div>
+        </div>
+        
+        {(cropPrediction || useMockData) ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="col-span-1 md:col-span-1 flex flex-col items-center justify-center p-4 bg-emerald-50 rounded-lg border border-emerald-100">
+              <div className="text-lg font-medium text-emerald-800 mb-2">Best Crop Prediction</div>
+              <div className="w-32 h-32 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                <FiCheck className="h-16 w-16 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-700">{useMockData ? mockCropPrediction.predictedCrop : cropPrediction?.predictedCrop}</div>
+              <div className="text-sm text-gray-600 mt-2">Confidence: {useMockData ? mockCropPrediction.confidence : cropPrediction?.confidence}%</div>
+              <div className="text-xs text-gray-500 mt-4">
+                Last updated: {new Date(useMockData ? mockCropPrediction.lastUpdated : (cropPrediction?.lastUpdated || new Date())).toLocaleString()}
+                {useMockData && <span className="ml-1 text-amber-600">(Mock Data)</span>}
+              </div>
+            </div>
+            
+            <div className="col-span-1 md:col-span-2">
+              <div className="text-lg font-medium text-emerald-800 mb-3">Other Suitable Crops</div>
+              <div className="space-y-4">
+                {(useMockData ? mockCropPrediction.suitableCrops : cropPrediction?.suitableCrops || []).map((crop, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-full">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium">{crop.crop}</span>
+                        <span className="text-sm text-gray-600">{crop.score}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-emerald-500 h-2.5 rounded-full" 
+                          style={{width: `${crop.score}%`}}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
+                <div className="text-amber-800 font-medium mb-2">Recommendation Details</div>
+                <p className="text-sm text-gray-700">
+                  Based on your field's soil type ({fieldData?.field.soilType}), water level ({fieldData?.field.waterLevel}mm), 
+                  and climate conditions, we recommend {useMockData ? mockCropPrediction.predictedCrop : cropPrediction?.predictedCrop} as the most suitable crop 
+                  for the current {fieldData?.field.season} season. The prediction considers factors 
+                  like soil nutrient levels, temperature, and historical yield data.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="h-40 flex flex-col items-center justify-center">
+            {predictingCrop ? (
+              <>
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-500 mb-4"></div>
+                <span className="text-gray-500">Analyzing field data for crop recommendations...</span>
+              </>
+            ) : (
+              <>
+                <FiDatabase className="h-10 w-10 text-gray-400 mb-4" />
+                <span className="text-gray-500">No crop prediction data available</span>
+                <div className="mt-4 flex space-x-4">
+                  <button
+                    onClick={predictCrop}
+                    className="py-2 px-4 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+                  >
+                    Get Recommendations
+                  </button>
+                  <button
+                    onClick={() => setUseMockData(true)}
+                    className="py-2 px-4 border border-emerald-600 text-emerald-600 rounded hover:bg-emerald-50 transition"
+                  >
+                    Use Example Data
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   return (
-    <div className="h-full overflow-auto p-6">
+    <div className="h-full overflow-auto p-6 bg-emerald-50">
       {/* Header with back button */}
       <div className="flex items-center mb-6">
         <button 
           onClick={onBack}
-          className="mr-4 p-2 rounded-full hover:bg-gray-100"
+          className="mr-4 p-2 rounded-full hover:bg-emerald-100 text-emerald-800"
         >
           <FiArrowLeft size={24} />
         </button>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-emerald-800">
           Field Dashboard - {fieldData?.field.location || 'Loading...'}
         </h1>
         
         <button 
           onClick={handleRefresh}
           disabled={loading || refreshing}
-          className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+          className="ml-auto flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors disabled:bg-emerald-300"
         >
           <FiRefreshCw className={`${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -276,8 +606,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Field Info Card */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Field Information</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-emerald-100">
+          <h2 className="text-xl font-semibold mb-4 text-emerald-800">Field Information</h2>
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Location:</span>
@@ -311,27 +641,27 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Weather Card */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Weather</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-sky-100">
+          <h2 className="text-xl font-semibold mb-4 text-sky-800">Weather</h2>
           
           {fieldData?.weather ? (
             <>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <div className="text-3xl font-bold">{fieldData.weather.current.temperature} °C</div>
-                  <div className="text-gray-600">{fieldData.weather.current.condition}</div>
-                  <div className="text-gray-600">{fieldData.weather.current.day}</div>
+                  <div className="text-3xl font-bold text-sky-800">{fieldData.weather.current.temperature} °C</div>
+                  <div className="text-sky-600">{fieldData.weather.current.condition}</div>
+                  <div className="text-sky-600">{fieldData.weather.current.day}</div>
                 </div>
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-sky-50">
                   {getWeatherIcon(fieldData.weather.current.condition)}
                 </div>
               </div>
               
               <div className="grid grid-cols-4 gap-2 mt-6">
                 {fieldData.weather.forecast.map((day, index) => (
-                  <div key={index} className="bg-blue-50 p-2 rounded text-center">
+                  <div key={index} className="bg-white p-2 rounded text-center shadow-sm border border-sky-50">
                     <div className="text-xl">{getWeatherIcon(day.condition)}</div>
-                    <div className="text-xs">{day.day}</div>
+                    <div className="text-xs font-medium text-sky-700">{day.day}</div>
                     <div className="text-sm font-medium">{day.temperature}°</div>
                   </div>
                 ))}
@@ -356,8 +686,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Growth Card */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Growth Status</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-emerald-100">
+          <h2 className="text-xl font-semibold mb-4 text-emerald-800">Growth Status</h2>
           
           {fieldData?.growth ? (
             <>
@@ -365,9 +695,9 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                 <div>
                   <h3 className="text-gray-600 mb-1">Growth Progress</h3>
                   <div className="relative pt-1">
-                    <div className="overflow-hidden h-4 text-xs flex rounded bg-green-200">
+                    <div className="overflow-hidden h-4 text-xs flex rounded bg-emerald-100">
                       <div 
-                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"
+                        className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500"
                         style={{ width: `${fieldData.growth.growthPercentage}%` }}
                       ></div>
                     </div>
@@ -380,7 +710,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                 <div>
                   <h3 className="text-gray-600 mb-1">Time Until Harvest</h3>
                   <div className="relative pt-1">
-                    <div className="overflow-hidden h-4 text-xs flex rounded bg-amber-200">
+                    <div className="overflow-hidden h-4 text-xs flex rounded bg-amber-100">
                       <div 
                         className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-amber-500"
                         style={{ width: `${fieldData.growth.harvestTimeLeftPercentage}%` }}
@@ -416,8 +746,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Growth History Chart */}
-        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Growth History</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-2 border border-emerald-100">
+          <h2 className="text-xl font-semibold mb-4 text-emerald-800">Growth History</h2>
           <div className="h-60">
             <Line 
               data={growthChartData} 
@@ -449,16 +779,16 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Replace Soil Health with Crop Health */}
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Crop Health</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-emerald-100">
+          <h2 className="text-xl font-semibold mb-4 text-emerald-800">Crop Health</h2>
           
           {cropAnalysis ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-gray-600 font-medium">Health Status:</h3>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  cropAnalysis.healthScore > 70 ? 'bg-green-100 text-green-800' : 
-                  cropAnalysis.healthScore > 40 ? 'bg-yellow-100 text-yellow-800' : 
+                  cropAnalysis.healthScore > 70 ? 'bg-emerald-100 text-emerald-800' : 
+                  cropAnalysis.healthScore > 40 ? 'bg-amber-100 text-amber-800' : 
                   'bg-red-100 text-red-800'
                 }`}>
                   {cropAnalysis.healthScore > 70 ? 'Healthy' : 
@@ -483,8 +813,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                   <div 
                     style={{ width: `${cropAnalysis.healthScore}%` }}
                     className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                      cropAnalysis.healthScore > 70 ? 'bg-green-500' : 
-                      cropAnalysis.healthScore > 40 ? 'bg-yellow-500' : 
+                      cropAnalysis.healthScore > 70 ? 'bg-emerald-500' : 
+                      cropAnalysis.healthScore > 40 ? 'bg-amber-500' : 
                       'bg-red-500'
                     }`}
                   ></div>
@@ -522,8 +852,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                     <div key={index} className="text-sm flex justify-between border-b pb-1">
                       <span>{new Date(item.date).toLocaleDateString()}</span>
                       <span className={`${
-                        item.status === 'Healthy' ? 'text-green-600' : 
-                        item.status === 'Moderate' ? 'text-yellow-600' : 
+                        item.status === 'Healthy' ? 'text-emerald-600' : 
+                        item.status === 'Moderate' ? 'text-amber-600' : 
                         'text-red-600'
                       }`}>
                         {item.status}
@@ -535,7 +865,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
               
               <button
                 onClick={() => setShowPhotoUploader(true)}
-                className="mt-4 w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                className="mt-4 w-full py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
               >
                 Upload New Photo
               </button>
@@ -544,7 +874,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
             <div className="photo-upload-section">
               <h3 className="text-gray-600 font-medium mb-3">Upload Plant Photo</h3>
               
-              <div className="bg-blue-50 border-2 border-dashed border-blue-300 rounded-lg p-6 text-center">
+              <div className="bg-emerald-50 border-2 border-dashed border-emerald-300 rounded-lg p-6 text-center">
                 {previewImage ? (
                   <div className="mb-4">
                     <img 
@@ -561,8 +891,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                   </div>
                 ) : (
                   <div className="mb-4">
-                    <div className="mx-auto w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center mb-2">
-                      <FiCamera className="h-12 w-12 text-blue-400" />
+                    <div className="mx-auto w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                      <FiCamera className="h-12 w-12 text-emerald-400" />
                     </div>
                     <p className="text-gray-600">Drag & drop your photo here or click to browse</p>
                   </div>
@@ -577,7 +907,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                 />
                 <label 
                   htmlFor="cropPhotoInput"
-                  className="inline-block py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer transition"
+                  className="inline-block py-2 px-4 bg-emerald-600 text-white rounded hover:bg-emerald-700 cursor-pointer transition"
                 >
                   Select Photo
                 </label>
@@ -593,7 +923,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
                 <button
                   onClick={handlePhotoUpload}
                   disabled={!previewImage || isUploading}
-                  className="py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:bg-green-300"
+                  className="py-2 px-4 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition disabled:bg-emerald-300"
                 >
                   {isUploading ? 'Analyzing...' : 'Analyze Photo'}
                 </button>
@@ -607,13 +937,13 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10">
-              <div className="bg-blue-100 w-24 h-24 rounded-full flex items-center justify-center mb-4">
-                <FiCamera className="h-12 w-12 text-blue-600" />
+              <div className="bg-emerald-100 w-24 h-24 rounded-full flex items-center justify-center mb-4">
+                <FiCamera className="h-12 w-12 text-emerald-600" />
               </div>
               <p className="text-gray-600 mb-4">Upload photos of your plants to check for diseases</p>
               <button
                 onClick={() => setShowPhotoUploader(true)}
-                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                className="py-2 px-4 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
               >
                 Upload Plant Photo
               </button>
@@ -621,9 +951,12 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
           )}
         </div>
         
+        {/* Add Crop Prediction Section before Recommendations */}
+        {renderCropPrediction()}
+        
         {/* Recommendations */}
-        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-3">
-          <h2 className="text-xl font-semibold mb-4">Recommendations</h2>
+        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-3 border border-amber-100">
+          <h2 className="text-xl font-semibold mb-4 text-amber-800">Recommendations</h2>
           
           {fieldData?.growth.recommendations ? (
             <ul className="list-disc pl-5 space-y-2">
@@ -642,7 +975,7 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
       {/* Loading State */}
       {loading && refreshing && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-500"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500"></div>
         </div>
       )}
       

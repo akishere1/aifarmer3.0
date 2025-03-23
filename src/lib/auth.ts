@@ -1,9 +1,10 @@
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt, { Secret, SignOptions, JwtPayload as JsonWebTokenPayload } from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { IUser } from '@/models/User';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Use environment variables with fallbacks for development
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_development_secret_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
 
 // Generate JWT token
@@ -15,12 +16,18 @@ export const generateToken = (user: Partial<IUser>) => {
       email: user.email,
       role: user.role,
     },
-    JWT_SECRET as Secret,
+    JWT_SECRET,
     {
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn']
     }
   );
 };
+
+// Extended JWT payload interface
+interface ExtendedJwtPayload extends JsonWebTokenPayload {
+  id: string;
+  role?: string;
+}
 
 // Verify JWT token
 export const verifyToken = (token: string) => {
@@ -105,7 +112,9 @@ export const authorizeRoles = (allowedRoles: string[]) => {
       return user;
     }
 
-    if (!allowedRoles.includes(user.role)) {
+    const userPayload = user as ExtendedJwtPayload;
+    
+    if (!userPayload.role || !allowedRoles.includes(userPayload.role)) {
       return NextResponse.json(
         { success: false, message: 'Not authorized to access this resource' },
         { status: 403 }

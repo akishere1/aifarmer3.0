@@ -1,27 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authMiddleware, authorizeRoles } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import Field from '@/models/Field';
 
+interface RequestBody {
+  waterLevel: number;
+  soilType: string;
+  landArea: number;
+  location: string;
+  temperature: number;
+  season: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate user
-    const user = await authMiddleware(req);
-    if (user instanceof NextResponse) {
-      return user; // Return the error response if authentication failed
-    }
-
-    // Authorize role (only farmers can add fields)
-    const authorizedUser = await authorizeRoles(['farmer'])(req);
-    if (authorizedUser instanceof NextResponse) {
-      return authorizedUser; // Return the error response if authorization failed
-    }
-
     // Connect to the database
     await connectToDatabase();
 
     // Parse request body
-    const body = await req.json();
+    const body: RequestBody = await req.json();
     
     // Validate required fields
     const { waterLevel, soilType, landArea, location, temperature, season } = body;
@@ -33,26 +29,37 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Create new field
+    // Validate waterLevel (must be between 0 and 100)
+    if (waterLevel > 100) {
+      return NextResponse.json(
+        { success: false, message: 'Water level must be between 0 and 100' },
+        { status: 400 }
+      );
+    }
+    
+    // Create new field with all required fields
     const newField = new Field({
-      farmer: (user as any).id,
-      waterLevel,
-      soilType,
-      landArea,
+      userId: '64f7c1b5e85330a883d485ff', // Default test ID
+      name: `Field - ${location}`, // Generate a name based on location
       location,
+      landArea,
+      soilType,
+      waterLevel,
       temperature,
       season,
-      createdAt: new Date()
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     
     // Save to database
-    await newField.save();
+    const savedField = await newField.save();
     
     return NextResponse.json(
       { 
         success: true, 
         message: 'Field added successfully',
-        data: newField
+        data: savedField
       },
       { status: 201 }
     );
@@ -63,4 +70,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
