@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     // Connect to database
     await connectDB();
+    console.log('Connected to database');
     
     // For testing purposes, get first user in database
     const user = await User.findOne().select('-password');

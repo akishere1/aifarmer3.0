@@ -1130,90 +1130,132 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({ fieldId, onBack }) => {
         </div>
         
         {/* Replace Soil Health with Crop Health */}
-        <div className="bg-white rounded-lg p-6 shadow-sm col-span-1 md:col-span-2 border border-emerald-100">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-emerald-800">Crop Health</h2>
-            <div className="flex items-center space-x-3">
+        <div className="bg-white rounded-lg p-8 shadow-md col-span-1 md:col-span-2 border border-emerald-100">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-emerald-800">Crop Health Analysis</h2>
+            <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowPhotoUploader(true)}
-                className="inline-flex items-center space-x-1 px-3 py-1 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors"
               >
                 <FiCamera className="h-4 w-4" />
-                <span>Analyze</span>
+                <span>Analyze Crop</span>
               </button>
               <button
                 onClick={testApiConnection}
-                className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors"
               >
-                Test API
+                <FiRefreshCw className="h-4 w-4" />
+                <span>Test API</span>
               </button>
             </div>
           </div>
           
           {/* API info - similar to crop prediction section */}
-          <div className="mb-4 text-sm p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-800">
-            <strong>Note:</strong> The crop disease detection API is running at http://127.0.0.1:8000/predict
-          </div>
-          
-          {cropAnalysis ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-gray-600 font-medium">Health Status:</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  cropAnalysis.healthScore > 70 ? 'bg-emerald-100 text-emerald-800' :
-                  cropAnalysis.healthScore > 40 ? 'bg-amber-100 text-amber-800' : 
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {cropAnalysis.healthScore > 70 ? 'Healthy' :
-                  cropAnalysis.healthScore > 40 ? 'Moderate' : 'Poor'}
-                </span>
+          <div className="mb-6 text-sm p-4 bg-blue-50 border border-blue-200 rounded-md text-blue-800">
+            <div className="flex items-start space-x-2">
+              <div className="mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
               </div>
-
-              <div className="relative pt-1">
-                <div className="flex mb-2 items-center justify-between">
+              <div>
+                <strong className="font-medium">Note:</strong> The crop disease detection API is running at http://127.0.0.1:8000/predict.
+                Upload a photo of your crop to analyze its health and detect potential diseases.
+              </div>
+            </div>
+          </div>
+  
+          {cropAnalysis ? (
+            <div className="space-y-8">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                   <div>
-                    <span className="text-xs font-semibold inline-block text-gray-600">
-                      Health Score
-                    </span>
+                    <h3 className="text-xl font-medium text-gray-800">Health Status</h3>
+                    <p className="text-gray-600 mt-1">Overall assessment of your crop's health</p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-semibold inline-block text-gray-600">
-                      {cropAnalysis.healthScore}%
+                  <div className="mt-4 md:mt-0">
+                    <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                      cropAnalysis?.healthScore > 70 ? 'bg-emerald-100 text-emerald-800' :
+                      cropAnalysis?.healthScore > 40 ? 'bg-amber-100 text-amber-800' : 
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {cropAnalysis?.healthScore > 70 ? 'Healthy' :
+                      cropAnalysis?.healthScore > 40 ? 'Moderate' : 'Poor'}
                     </span>
                   </div>
                 </div>
-                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                  <div
-                    style={{ width: `${cropAnalysis.healthScore}%` }}
-                    className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                      cropAnalysis.healthScore > 70 ? 'bg-emerald-500' :
-                      cropAnalysis.healthScore > 40 ? 'bg-amber-500' :
-                      'bg-red-500'
-                    }`}
-                  ></div>
+    
+                <div className="relative pt-1">
+                  <div className="flex mb-3 items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">
+                        Health Score
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold inline-block text-gray-700">
+                        {cropAnalysis.healthScore || 0}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="overflow-hidden h-3 mb-6 text-xs flex rounded-full bg-gray-200">
+                    <div
+                      style={{ width: `${cropAnalysis?.healthScore || 0}%` }}
+                      className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center rounded-full transition-all duration-500 ${
+                        cropAnalysis?.healthScore > 70 ? 'bg-emerald-500' :
+                        cropAnalysis?.healthScore > 40 ? 'bg-amber-500' :
+                        'bg-red-500'
+                      }`}
+                    ></div>
+                  </div>
                 </div>
               </div>
 
               {/* Add new grid for charts */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                  <h3 className="text-gray-700 font-medium mb-4">Health History</h3>
-                  <div className="h-60">
-                    <Line data={healthHistoryChartData} options={lineChartOptions} />
+              <div className="mt-8 space-y-8">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-700 mb-4">Health Trends</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                      <h4 className="text-base font-medium text-gray-700 mb-3">Health History</h4>
+                      <div className="h-72">
+                        <Line data={healthHistoryChartData} options={{
+                          ...lineChartOptions,
+                          maintainAspectRatio: false
+                        }} />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                      <h4 className="text-base font-medium text-gray-700 mb-3">Leaf Area Index</h4>
+                      <div className="h-72">
+                        <Line data={leafAreaChartData} options={{
+                          ...lineChartOptions,
+                          maintainAspectRatio: false
+                        }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                  <h3 className="text-gray-700 font-medium mb-4">Leaf Area Index</h3>
-                  <div className="h-60">
-                    <Line data={leafAreaChartData} options={lineChartOptions} />
-                  </div>
-                </div>
-                
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 md:col-span-2">
-                  <h3 className="text-gray-700 font-medium mb-4">Nutrient Levels</h3>
-                  <div className="h-60">
-                    <Bar data={nutrientLevelsChartData} options={barChartOptions} />
+                <div>
+                  <h3 className="text-lg font-medium text-gray-700 mb-4">Nutrient Analysis</h3>
+                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <div className="h-80 md:h-96">
+                      <Bar data={nutrientLevelsChartData} options={{
+                        ...barChartOptions,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y' as const,
+                        plugins: {
+                          ...barChartOptions.plugins,
+                          legend: {
+                            ...barChartOptions.plugins.legend,
+                            display: false
+                          }
+                        }
+                      }} />
+                    </div>
                   </div>
                 </div>
               </div>
