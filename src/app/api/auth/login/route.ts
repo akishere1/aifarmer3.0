@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
-import { generateToken, setTokenCookie } from '@/lib/auth';
+import { generateToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Generate token
     const token = generateToken(user);
 
-    // Set token in cookie
+    // Create response with user data
     const response = NextResponse.json(
       { 
         success: true, 
@@ -43,19 +43,18 @@ export async function POST(req: NextRequest) {
           role: user.role,
           location: user.location,
           phoneNumber: user.phoneNumber,
-        },
-        token // Return token to client
+        }
       },
       { status: 200 }
     );
 
-    // Set cookie for server-side auth as well
+    // Set cookie for server-side auth
     response.cookies.set({
       name: 'token',
       value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/',
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });

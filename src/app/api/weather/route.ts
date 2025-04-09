@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authMiddleware } from '@/lib/auth';
 
 // Weather API configuration
 const WEATHER_API_KEY = '894c7ec9b3d5495dabe100429251603';
@@ -9,6 +10,12 @@ const DEFAULT_LOCATION = 'Bengaluru';
 
 export async function GET(req: NextRequest) {
   try {
+    // Authenticate the request
+    const auth = await authMiddleware(req);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    
     // Get location from query parameters (optional)
     const url = new URL(req.url);
     const location = url.searchParams.get('location') || DEFAULT_LOCATION;

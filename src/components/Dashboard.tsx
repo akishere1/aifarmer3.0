@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import createAuthenticatedAxios from '@/lib/axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
 import { FiRefreshCw, FiPlus, FiUser, FiMessageCircle } from 'react-icons/fi';
@@ -120,20 +120,22 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch user data without authentication
-      const userResponse = await axios.get('/api/user');
-      setUser(userResponse.data.user);
+      const api = createAuthenticatedAxios();
       
-      // Fetch fields data without authentication
-      const fieldsResponse = await axios.get('/api/fields');
+      // Get user data from session
+      const sessionResponse = await api.get('/auth/session');
+      setUser(sessionResponse.data.user);
+      
+      // Fetch fields data
+      const fieldsResponse = await api.get('/fields');
       setFields(fieldsResponse.data.data);
       
-      // Fetch weather data without authentication
-      const weatherResponse = await axios.get('/api/weather');
+      // Fetch weather data
+      const weatherResponse = await api.get('/weather');
       setWeatherData(weatherResponse.data.data);
       
-      // Fetch growth data without authentication
-      const growthResponse = await axios.get('/api/growth');
+      // Fetch growth data
+      const growthResponse = await api.get('/growth');
       setGrowthData(growthResponse.data.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch data');
@@ -235,7 +237,7 @@ const Dashboard = () => {
       }
       
       // Send to your API endpoint for crop disease detection
-      const response = await axios.post('/api/crop-health/analyze', formData, {
+      const response = await createAuthenticatedAxios().post('/crop-health/analyze', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import Field from '@/models/Field';
+import { getTokenFromCookie } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_development_secret_key';
 
 // Mock crop data for different seasons and soil types
 const growthRates: Record<string, Record<string, any>> = {
@@ -32,98 +36,90 @@ const growthRates: Record<string, Record<string, any>> = {
 
 export async function GET(req: NextRequest) {
   try {
-    // No authentication required
+    // Get token from cookie
+    const token = await getTokenFromCookie();
     
-    // Connect to the database
-    await connectDB();
-
-    // Get field ID from query parameters (optional)
-    const url = new URL(req.url);
-    const fieldId = url.searchParams.get('fieldId');
-
-    // Query to find fields - no user filtering
-    const query = fieldId 
-      ? { _id: fieldId }
-      : {};
-
-    // Fetch fields data
-    const fields = await Field.find(query).limit(5);
-
-    if (fields.length === 0) {
+    if (!token) {
       return NextResponse.json(
-        { success: false, message: 'No fields found' },
-        { status: 404 }
+        { success: false, message: 'No session found' },
+        { status: 401 }
       );
     }
-
-    // Calculate growth metrics for each field
-    const fieldGrowthData = fields.map((field: any) => {
-      // Get growth rate and harvest days based on season and soil type
-      const seasonData = growthRates[field.season] || growthRates['Kharif'];
-      const soilData = seasonData[field.soilType] || seasonData['loamy'];
-      
-      // Mock planting date (in a real app, this would be stored with each field)
-      // For demo purposes, we'll assume fields were planted between 20-60 days ago
-      const daysPlanted = Math.floor(Math.random() * 40) + 20;
-      
-      // Calculate growth percentage based on days planted and harvest days
-      const growthPercentage = Math.min(100, Math.round((daysPlanted / soilData.harvestDays) * 100));
-      
-      // Calculate days remaining until harvest
-      const daysRemaining = Math.max(0, soilData.harvestDays - daysPlanted);
-      
-      // Calculate harvest time left as a percentage
-      const harvestTimeLeftPercentage = Math.max(0, Math.round((daysRemaining / soilData.harvestDays) * 100));
-
-      // Generate mock growth history (in a real app, this would be based on actual measurements)
-      const growthHistory = [];
-      for (let i = 0; i < 6; i++) {
-        // Calculate growth for each month (assuming linear growth for simplicity)
-        const monthGrowth = Math.min(100, Math.round((i + 1) * (100 / 6) * soilData.growthRate));
-        growthHistory.push({
-          month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i],
-          value: monthGrowth
-        });
-      }
-
-      return {
-        fieldId: field._id,
-        location: field.location,
-        season: field.season,
-        soilType: field.soilType,
-        daysPlanted,
-        daysRemaining,
-        growthPercentage,
-        harvestTimeLeftPercentage,
-        estimatedYield: Math.round(field.landArea * soilData.growthRate * 10) / 10, // t/ha
-        growthHistory,
-      };
-    });
-
-    // Calculate averages for all fields
-    const avgGrowthPercentage = Math.round(
-      fieldGrowthData.reduce((sum: number, field: any) => sum + field.growthPercentage, 0) / fieldGrowthData.length
-    );
     
-    const avgHarvestTimeLeftPercentage = Math.round(
-      fieldGrowthData.reduce((sum: number, field: any) => sum + field.harvestTimeLeftPercentage, 0) / fieldGrowthData.length
-    );
-
-    // Return growth data
-    return NextResponse.json({
-      success: true,
-      data: {
-        fields: fieldGrowthData,
-        summary: {
-          avgGrowthPercentage,
-          avgHarvestTimeLeftPercentage,
+    // Verify token
+    try {
+      jwt.verify(token, JWT_SECRET);
+      
+      // Connect to the database
+      await connectDB();
+      
+      // Fetch all fields
+      const fields = await Field.find().sort({ createdAt: -1 });
+      
+      // Calculate growth data for each field
+      const fieldsGrowthData = fields.map(field => {
+        const plantedDate = new Date(field.createdAt);
+        const currentDate = new Date();
+        const daysPlanted = Math.floor((currentDate.getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const rateInfo = growthRates[field.season][field.soilType];
+        const totalDays = rateInfo.harvestDays;
+        const daysRemaining = Math.max(0, totalDays - daysPlanted);
+        const growthPercentage = Math.min(100, Math.round((daysPlanted / totalDays) * 100 * rateInfo.growthRate));
+        const harvestTimeLeftPercentage = Math.max(0, Math.round((daysRemaining / totalDays) * 100));
+        
+        // Generate mock growth history
+        const growthHistory = Array.from({ length: 6 }, (_, i) => {
+          const month = new Date(currentDate.getFullYear(), currentDate.getMonth() - 5 + i, 1);
+          return {
+            month: month.toLocaleString('default', { month: 'short' }),
+            value: Math.min(100, Math.round((growthPercentage / 6) * (i + 1) * (0.8 + Math.random() * 0.4)))
+          };
+        });
+        
+        return {
+          fieldId: field._id,
+          location: field.location,
+          season: field.season,
+          soilType: field.soilType,
+          daysPlanted,
+          daysRemaining,
+          growthPercentage,
+          harvestTimeLeftPercentage,
+          estimatedYield: Math.round(1000 * rateInfo.growthRate * (field.landArea || 1)),
+          growthHistory
+        };
+      });
+      
+      // Calculate summary data
+      const avgGrowthPercentage = Math.round(
+        fieldsGrowthData.reduce((sum, field) => sum + field.growthPercentage, 0) / (fields.length || 1)
+      );
+      
+      const avgHarvestTimeLeftPercentage = Math.round(
+        fieldsGrowthData.reduce((sum, field) => sum + field.harvestTimeLeftPercentage, 0) / (fields.length || 1)
+      );
+      
+      return NextResponse.json({
+        success: true,
+        data: {
+          fields: fieldsGrowthData,
+          summary: {
+            avgGrowthPercentage,
+            avgHarvestTimeLeftPercentage
+          }
         }
-      },
-    }, { status: 200 });
+      });
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid session' },
+        { status: 401 }
+      );
+    }
   } catch (error: any) {
-    console.error('Error fetching growth data:', error);
+    console.error('Error calculating growth data:', error);
     return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch growth data' },
+      { success: false, message: error.message || 'Failed to calculate growth data' },
       { status: 500 }
     );
   }

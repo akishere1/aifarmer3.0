@@ -70,19 +70,35 @@ export const removeTokenCookie = async () => {
 // Authentication middleware
 export async function authMiddleware(req: NextRequest) {
   try {
-    // Get token from header
-    const authHeader = req.headers.get('authorization');
+    // First try to get token from cookie
+    const token = req.cookies.get('token')?.value;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { success: false, message: 'Authorization token missing' },
-        { status: 401 }
-      );
+    // If no token in cookie, try to get from Authorization header
+    if (!token) {
+      const authHeader = req.headers.get('authorization');
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return NextResponse.json(
+          { success: false, message: 'Authorization token missing' },
+          { status: 401 }
+        );
+      }
+      
+      const headerToken = authHeader.split(' ')[1];
+      
+      // Verify token from header
+      try {
+        const decoded = jwt.verify(headerToken, JWT_SECRET);
+        return decoded;
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid token' },
+          { status: 401 }
+        );
+      }
     }
-
-    const token = authHeader.split(' ')[1];
     
-    // Verify token
+    // Verify token from cookie
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       return decoded;
