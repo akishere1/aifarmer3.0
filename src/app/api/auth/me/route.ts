@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getTokenFromCookie, verifyToken, authMiddleware } from '@/lib/auth';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
-import { authMiddleware } from '@/lib/auth';
+import { UserData, ApiError } from '@/types/api';
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,8 +41,9 @@ export async function GET(req: NextRequest) {
       { success: true, user: userData },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Get current user error:', error);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error('Get user error:', apiError);
     
     return NextResponse.json(
       { 

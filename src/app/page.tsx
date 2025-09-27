@@ -1,131 +1,297 @@
-import Image from "next/image";
-import Link from "next/link";
+import Link from 'next/link';
+import { 
+  FiTrendingUp, 
+  FiShield, 
+  FiUsers, 
+  FiBarChart, 
+  FiMapPin, 
+  FiSun,
+  FiArrowRight,
+  FiPlay,
+  FiCheck,
+  FiShoppingCart,
+  FiTarget,
+  FiZap,
+  FiAward,
+  FiHeart,
+  FiStar,
+  FiTruck,
+  FiDollarSign,
+  FiCamera,
+  FiGlobe
+} from 'react-icons/fi';
+import { GiPlantSeed } from 'react-icons/gi';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Hero Section */}
-      <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-green-800 dark:text-green-400 mb-6">
-            Farmers Assistance Platform
-          </h1>
-          <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-10">
-            A comprehensive platform to assist farmers with crop information, weather data, market prices, and expert advice.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/register" 
+    <div className="min-h-screen bg-white">
+      {/* Modern Navigation */}
+      <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                <GiPlantSeed className="text-white text-xl" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">AI Farm Commerce</span>
+            </div>
+            
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Features</a>
+              <a href="#solutions" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Solutions</a>
+              <a href="#marketplace" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Marketplace</a>
+              <Link href="/login" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Login</Link>
+              <Link 
+                href="/register" 
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-2.5 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg font-medium"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Modern Hero Section */}
+      <section className="relative bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-green-200/30 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-blue-200/30 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-700"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            {/* Badge */}
+            <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm border border-green-200/50 rounded-full px-6 py-3 mb-8 shadow-lg">
+              <FiZap className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-semibold text-green-700">AI-Powered Agriculture Platform</span>
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+            
+            <h1 className="text-6xl md:text-7xl font-bold mb-8">
+              <span className="bg-gradient-to-r from-gray-900 via-green-800 to-emerald-700 bg-clip-text text-transparent">
+                Farm Smarter
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Sell Better
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-gray-700 max-w-4xl mx-auto mb-12 leading-relaxed">
+              Transform your agricultural business with our comprehensive platform. 
+              From smart farming to direct marketplace access—everything you need to 
+              <span className="font-semibold text-green-700"> maximize profits</span> and 
+              <span className="font-semibold text-emerald-700"> grow sustainably</span>.
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+              <Link 
+                href="/register" 
+                className="group flex items-center space-x-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-5 rounded-2xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-xl font-semibold text-lg"
+              >
+                <span>Start Free Trial</span>
+                <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
               
-              className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Get Started
-            </Link>
-            <Link 
-              href="/about" 
-              className="px-6 py-3 bg-white text-green-600 font-medium rounded-lg border border-green-600 hover:bg-green-50 transition-colors"
-            >
-              Learn More
-            </Link>
+              <button className="group flex items-center space-x-3 bg-white/90 backdrop-blur-sm text-gray-700 px-10 py-5 rounded-2xl hover:bg-white transition-all border border-gray-200/50 shadow-lg font-semibold text-lg">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FiPlay className="w-5 h-5 text-green-600 ml-1" />
+                </div>
+                <span>Watch Demo</span>
+              </button>
+            </div>
+            
+            {/* Modern Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                  <FiUsers className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">2,500+</div>
+                <div className="text-gray-600 font-medium">Active Farmers</div>
+              </div>
+              
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                  <FiTrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">45%</div>
+                <div className="text-gray-600 font-medium">Yield Increase</div>
+              </div>
+              
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                  <FiDollarSign className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent mb-2">₹2.5L</div>
+                <div className="text-gray-600 font-medium">Avg Revenue/Month</div>
+              </div>
+              
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50 hover:shadow-2xl transition-all">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                  <FiShoppingCart className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">10K+</div>
+                <div className="text-gray-600 font-medium">Marketplace Orders</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
-          Key Features
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Feature 1 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Crop Information
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Detailed information about various crops, including growing seasons, soil requirements, diseases, and treatments.
+      <section id="features" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Everything you need to grow smarter
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Our comprehensive platform provides all the tools and insights you need to optimize your farming operations.
             </p>
           </div>
-
-          {/* Feature 2 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-              </svg>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-green-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6">
+                <FiTrendingUp className="w-7 h-7 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Smart Analytics
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Get AI-powered insights on crop performance, yield predictions, and optimization recommendations.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Real-time monitoring</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Predictive analytics</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Weather Data
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Location-based weather information and forecasts to help farmers plan their activities.
-            </p>
-          </div>
 
-          {/* Feature 3 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            {/* Feature 2 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-6">
+                <FiSun className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Weather Intelligence
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Advanced weather forecasting and alerts to help you make informed decisions about planting, irrigation, and harvesting.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>7-day forecasts</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Weather alerts</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Market Prices
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Real-time market prices for different crops across various markets.
-            </p>
-          </div>
 
-          {/* Feature 4 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            {/* Feature 3 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-purple-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-6">
+                <FiMapPin className="w-7 h-7 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Field Management
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Organize and monitor all your fields in one place with detailed tracking of crops, soil health, and growth stages.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Multi-field tracking</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Soil analysis</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Query System
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Platform for farmers to ask questions and receive answers from agricultural experts.
-            </p>
-          </div>
 
-          {/* Feature 5 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            {/* Feature 4 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-yellow-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-yellow-100 rounded-xl flex items-center justify-center mb-6">
+                <FiBarChart className="w-7 h-7 text-yellow-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Market Intelligence
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Stay informed with real-time market prices, demand forecasts, and the best times to sell your produce.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Live pricing</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Market trends</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Image Analysis
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Upload images of crops/plants to identify diseases and get treatment recommendations.
-            </p>
-          </div>
 
-          {/* Feature 6 */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
+            {/* Feature 5 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mb-6">
+                <FiShield className="w-7 h-7 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Crop Protection
+              </h3>
+              <p className="text-gray-600 mb-4">
+                AI-powered disease detection and pest management with instant recommendations for treatment and prevention.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Disease detection</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Treatment plans</span>
+                </li>
+              </ul>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Personalized Recommendations
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              Get personalized crop recommendations based on your location, soil type, and weather conditions.
-            </p>
+
+            {/* Feature 6 */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-xl transition-all">
+              <div className="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-6">
+                <FiUsers className="w-7 h-7 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">
+                Community & Support
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Connect with experts and fellow farmers, get answers to your questions, and access educational resources.
+              </p>
+              <ul className="space-y-2">
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Expert support</span>
+                </li>
+                <li className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FiCheck className="w-4 h-4 text-green-600" />
+                  <span>Farmer community</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>

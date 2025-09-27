@@ -1,363 +1,382 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
+'use client';
 
-// Type definitions
+import React, { useState, useEffect } from 'react';
+import { 
+  FiPlus, 
+  FiMapPin, 
+  FiTrendingUp,
+  FiCalendar,
+  FiActivity,
+  FiTarget,
+  FiDollarSign,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiClock,
+  FiEdit3,
+  FiTrash2,
+  FiEye
+} from 'react-icons/fi';
+import { GiPlantSeed, GiWheat } from 'react-icons/gi';
+
 interface Field {
   _id: string;
-  waterLevel: number;
-  soilType: 'clay' | 'loamy' | 'sandy' | 'silt' | 'saline' | 'peaty';
-  landArea: number;
-  location: string;
-  temperature: number;
-  season: 'Kharif' | 'Rabi' | 'Zaid';
+  name: string;
+  location: {
+    address: string;
+    coordinates: [number, number];
+  };
+  size: number;
+  soilProfile: {
+    type: string;
+    ph: number;
+  };
+  currentStatus: 'active' | 'fallow' | 'preparation' | 'harvested';
   createdAt: string;
 }
 
-interface FormData {
-  waterLevel: number | '';
-  soilType: 'clay' | 'loamy' | 'sandy' | 'silt' | 'saline' | 'peaty' | '';
-  landArea: number | '';
-  location: string;
-  temperature: number | '';
-  season: 'Kharif' | 'Rabi' | 'Zaid' | '';
+interface CropPlan {
+  _id: string;
+  fieldId: string;
+  recommendedCrops: Array<{
+    crop: string;
+    variety: string;
+    confidence: number;
+    predictedYield: number;
+  }>;
+  status: 'pending' | 'accepted' | 'rejected';
+  expectedRevenue: {
+    profit: number;
+    profitMargin: number;
+  };
+  createdAt: string;
 }
 
 const FieldManagement = () => {
-  // State for form data
-  const [formData, setFormData] = useState<FormData>({
-    waterLevel: '',
-    soilType: '',
-    landArea: '',
-    location: '',
-    temperature: '',
-    season: '',
-  });
-
-  // State for validation errors
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
-
-  // State for fields data
   const [fields, setFields] = useState<Field[]>([]);
-  
-  // Loading and view states
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [viewFields, setViewFields] = useState(false);
+  const [cropPlans, setCropPlans] = useState<CropPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedField, setSelectedField] = useState<Field | null>(null);
 
-  // Handle input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    
-    // Clear error when user types
-    if (errors[name as keyof FormData]) {
-      setErrors({
-        ...errors,
-        [name]: '',
-      });
-    }
-  };
+  useEffect(() => {
+    fetchFields();
+    fetchCropPlans();
+  }, []);
 
-  // Validate form
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof FormData, string>> = {};
-    
-    // Check required fields
-    if (formData.waterLevel === '') newErrors.waterLevel = 'Water level is required';
-    if (formData.soilType === '') newErrors.soilType = 'Soil type is required';
-    if (formData.landArea === '') newErrors.landArea = 'Land area is required';
-    if (!formData.location) newErrors.location = 'Location is required';
-    if (formData.temperature === '') newErrors.temperature = 'Temperature is required';
-    if (formData.season === '') newErrors.season = 'Season is required';
-    
-    // Range validations
-    if (typeof formData.waterLevel === 'number' && formData.waterLevel < 0) {
-      newErrors.waterLevel = 'Water level cannot be negative';
-    }
-    
-    if (typeof formData.landArea === 'number' && formData.landArea <= 0) {
-      newErrors.landArea = 'Land area must be greater than zero';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const response = await axios.post('/api/fields/add', formData);
-      
-      if (response.status === 201) {
-        toast.success('Field added successfully!');
-        // Optionally reset the form
-        setFormData({
-          waterLevel: '',
-          soilType: '',
-          landArea: '',
-          location: '',
-          temperature: '',
-          season: '',
-        });
-        
-        // If viewing fields, refresh the list
-        if (viewFields) {
-          fetchFields();
-        }
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add field');
-      console.error('Error adding field:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Fetch all fields
   const fetchFields = async () => {
-    setIsLoading(true);
-    
     try {
-      const response = await axios.get('/api/fields');
-      setFields(response.data.data);
-      setViewFields(true);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to fetch fields');
+      const response = await fetch('/api/fields');
+      const data = await response.json();
+      if (data.success) {
+        setFields(data.data.fields || []);
+      }
+    } catch (error) {
       console.error('Error fetching fields:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Toggle view fields
-  const toggleViewFields = () => {
-    if (!viewFields) {
-      fetchFields();
-    } else {
-      setViewFields(false);
+  const fetchCropPlans = async () => {
+    try {
+      const response = await fetch('/api/predictions');
+      const data = await response.json();
+      if (data.success) {
+        setCropPlans(data.data.cropPlans || []);
+      }
+    } catch (error) {
+      console.error('Error fetching crop plans:', error);
     }
   };
+
+  const generatePrediction = async (fieldId: string) => {
+    try {
+      const response = await fetch('/api/predictions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fieldId }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        await fetchCropPlans(); // Refresh crop plans
+        // Show success notification
+        console.log('Prediction generated successfully');
+      }
+    } catch (error) {
+      console.error('Error generating prediction:', error);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'fallow': return 'bg-yellow-100 text-yellow-800';
+      case 'preparation': return 'bg-blue-100 text-blue-800';
+      case 'harvested': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPlanStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-orange-100 text-orange-800';
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <Toaster position="top-right" />
-      
-      <h1 className="text-2xl font-bold mb-6">Field Management</h1>
-      
-      {/* Add Field Form */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 className="text-xl font-semibold mb-4">Add New Field</h2>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Water Level */}
-            <div className="mb-4">
-              <label htmlFor="waterLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                Water Level (mm)
-              </label>
-              <input
-                type="number"
-                id="waterLevel"
-                name="waterLevel"
-                value={formData.waterLevel}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.waterLevel ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.waterLevel && (
-                <p className="text-red-500 text-xs mt-1">{errors.waterLevel}</p>
-              )}
+    <div className="p-6 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Field Management</h1>
+          <p className="text-gray-600 mt-2">Manage your fields and get AI-powered crop recommendations</p>
+        </div>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg"
+        >
+          <FiPlus className="w-5 h-5" />
+          <span>Add New Field</span>
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+              <FiMapPin className="w-6 h-6 text-white" />
             </div>
-            
-            {/* Soil Type */}
-            <div className="mb-4">
-              <label htmlFor="soilType" className="block text-sm font-medium text-gray-700 mb-1">
-                Soil Type
-              </label>
-              <select
-                id="soilType"
-                name="soilType"
-                value={formData.soilType}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.soilType ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select Soil Type</option>
-                <option value="clay">Clay</option>
-                <option value="loamy">Loamy</option>
-                <option value="sandy">Sandy</option>
-                <option value="silt">Silt</option>
-                <option value="saline">Saline</option>
-                <option value="peaty">Peaty</option>
-              </select>
-              {errors.soilType && (
-                <p className="text-red-500 text-xs mt-1">{errors.soilType}</p>
-              )}
-            </div>
-            
-            {/* Land Area */}
-            <div className="mb-4">
-              <label htmlFor="landArea" className="block text-sm font-medium text-gray-700 mb-1">
-                Land Area (hectares)
-              </label>
-              <input
-                type="number"
-                id="landArea"
-                name="landArea"
-                value={formData.landArea}
-                onChange={handleChange}
-                step="0.01"
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.landArea ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.landArea && (
-                <p className="text-red-500 text-xs mt-1">{errors.landArea}</p>
-              )}
-            </div>
-            
-            {/* Location */}
-            <div className="mb-4">
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                Location
-              </label>
-              <input
-                type="text"
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.location && (
-                <p className="text-red-500 text-xs mt-1">{errors.location}</p>
-              )}
-            </div>
-            
-            {/* Temperature */}
-            <div className="mb-4">
-              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
-                Temperature (°C)
-              </label>
-              <input
-                type="number"
-                id="temperature"
-                name="temperature"
-                value={formData.temperature}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.temperature ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.temperature && (
-                <p className="text-red-500 text-xs mt-1">{errors.temperature}</p>
-              )}
-            </div>
-            
-            {/* Season */}
-            <div className="mb-4">
-              <label htmlFor="season" className="block text-sm font-medium text-gray-700 mb-1">
-                Season
-              </label>
-              <select
-                id="season"
-                name="season"
-                value={formData.season}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md ${
-                  errors.season ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select Season</option>
-                <option value="Kharif">Kharif</option>
-                <option value="Rabi">Rabi</option>
-                <option value="Zaid">Zaid</option>
-              </select>
-              {errors.season && (
-                <p className="text-red-500 text-xs mt-1">{errors.season}</p>
-              )}
-            </div>
+            <span className="text-2xl font-bold text-gray-900">{fields.length}</span>
           </div>
-          
-          <div className="mt-4">
+          <h3 className="font-semibold text-gray-700">Total Fields</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            {fields.filter(f => f.currentStatus === 'active').length} active
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+              <FiActivity className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">
+              {fields.reduce((sum, field) => sum + field.size, 0).toFixed(1)}
+            </span>
+          </div>
+          <h3 className="font-semibold text-gray-700">Total Area</h3>
+          <p className="text-sm text-gray-500 mt-1">hectares</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center">
+              <FiTarget className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">
+              {cropPlans.filter(p => p.status === 'pending').length}
+            </span>
+          </div>
+          <h3 className="font-semibold text-gray-700">Pending Plans</h3>
+          <p className="text-sm text-gray-500 mt-1">awaiting decision</p>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+              <FiDollarSign className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">
+              ₹{cropPlans.filter(p => p.status === 'accepted')
+                .reduce((sum, plan) => sum + (plan.expectedRevenue?.profit || 0), 0)
+                .toLocaleString()
+              }
+            </span>
+          </div>
+          <h3 className="font-semibold text-gray-700">Expected Profit</h3>
+          <p className="text-sm text-gray-500 mt-1">from accepted plans</p>
+        </div>
+      </div>
+
+      {/* Fields Grid */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Your Fields</h2>
+        
+        {fields.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-lg border border-gray-100">
+            <GiPlantSeed className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">No fields yet</h3>
+            <p className="text-gray-500 mb-6">Get started by adding your first field to receive AI-powered crop recommendations</p>
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
+              onClick={() => setShowAddForm(true)}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              {isSubmitting ? 'Adding...' : 'Add Field'}
+              Add Your First Field
             </button>
           </div>
-        </form>
-      </div>
-      
-      {/* View Fields Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">My Fields</h2>
-          <button
-            onClick={toggleViewFields}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            {viewFields ? 'Hide Fields' : 'View All Fields'}
-          </button>
-        </div>
-        
-        {isLoading ? (
-          <div className="text-center py-4">
-            <p>Loading fields...</p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {fields.map((field) => {
+              const fieldPlans = cropPlans.filter(p => p.fieldId === field._id);
+              const latestPlan = fieldPlans[0];
+              
+              return (
+                <div key={field._id} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                  {/* Field Header */}
+                  <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
+                          <GiWheat className="w-8 h-8 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{field.name}</h3>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <FiMapPin className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">{field.location.address}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(field.currentStatus)}`}>
+                          {field.currentStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Field Details */}
+                  <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Size</p>
+                        <p className="font-semibold text-gray-900">{field.size} hectares</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Soil Type</p>
+                        <p className="font-semibold text-gray-900 capitalize">{field.soilProfile.type}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">pH Level</p>
+                        <p className="font-semibold text-gray-900">{field.soilProfile.ph}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Created</p>
+                        <p className="font-semibold text-gray-900">
+                          {new Date(field.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Latest Crop Plan */}
+                    {latestPlan && (
+                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-100">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900">Latest AI Recommendation</h4>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPlanStatusColor(latestPlan.status)}`}>
+                            {latestPlan.status}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Top Crop:</span>
+                            <span className="font-semibold text-gray-900 capitalize">
+                              {latestPlan.recommendedCrops[0]?.crop} ({latestPlan.recommendedCrops[0]?.confidence}% confidence)
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Expected Yield:</span>
+                            <span className="font-semibold text-gray-900">
+                              {latestPlan.recommendedCrops[0]?.predictedYield} quintals
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Profit Margin:</span>
+                            <span className="font-semibold text-green-600">
+                              {latestPlan.expectedRevenue?.profitMargin}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="p-6 bg-gray-50 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <FiEye className="w-4 h-4" />
+                        </button>
+                        <button className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                          <FiEdit3 className="w-4 h-4" />
+                        </button>
+                        <button className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <FiTrash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => generatePrediction(field._id)}
+                        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all"
+                      >
+                        <FiTrendingUp className="w-4 h-4" />
+                        <span>Get AI Prediction</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : viewFields && (
-          <>
-            {fields.length === 0 ? (
-              <div className="text-center py-4">
-                <p>No fields added yet. Add your first field above!</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Location</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Soil Type</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Water Level</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Land Area</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Season</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Temperature</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {fields.map((field) => (
-                      <tr key={field._id}>
-                        <td className="px-4 py-3 text-sm">{field.location}</td>
-                        <td className="px-4 py-3 text-sm capitalize">{field.soilType}</td>
-                        <td className="px-4 py-3 text-sm">{field.waterLevel} mm</td>
-                        <td className="px-4 py-3 text-sm">{field.landArea} ha</td>
-                        <td className="px-4 py-3 text-sm">{field.season}</td>
-                        <td className="px-4 py-3 text-sm">{field.temperature} °C</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
         )}
       </div>
+
+      {/* Add Field Modal would go here */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Field</h2>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-4">
+                Field creation form will be implemented in the next phase.
+              </p>
+              <p className="text-sm text-gray-500">
+                This will include map integration, soil testing, and crop history input.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

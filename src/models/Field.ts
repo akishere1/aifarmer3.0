@@ -2,7 +2,8 @@ import mongoose, { Schema } from 'mongoose';
 
 const FieldSchema = new Schema({
   userId: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
     index: true
   },

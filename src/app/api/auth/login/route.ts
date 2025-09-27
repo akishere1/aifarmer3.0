@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { generateToken } from '@/lib/auth';
+import { LoginRequest, AuthResponse, ApiError } from '@/types/api';
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,14 +61,15 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error: any) {
-    console.error('Login error:', error);
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error('Login error:', apiError);
     
     return NextResponse.json(
       { 
         success: false, 
         message: 'Error logging in', 
-        error: error.message || 'Unknown error' 
+        error: apiError.message || 'Unknown error' 
       },
       { status: 500 }
     );

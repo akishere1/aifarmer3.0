@@ -30,7 +30,7 @@ export default function Register() {
       setFormData({
         ...formData,
         [parent]: {
-          ...formData[parent as keyof typeof formData] as Record<string, any>,
+          ...(formData[parent as keyof typeof formData] as Record<string, string>),
           [child]: value,
         },
       });
@@ -83,8 +83,9 @@ export default function Register() {
 
       // Redirect to dashboard on successful registration
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during registration');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'An error occurred during registration');
     } finally {
       setLoading(false);
     }

@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { removeTokenCookie } from '@/lib/auth';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    // Remove token cookie
-    removeTokenCookie();
-
-    return NextResponse.json(
+    // Create response and remove token cookie
+    const response = NextResponse.json(
       { success: true, message: 'Logged out successfully' },
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Logout error:', error);
+
+    // Remove token cookie
+    response.cookies.set({
+      name: 'token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: -1, // Expire immediately
+    });
+
+    return response;
+  } catch (error: unknown) {
+    const apiError = error as Error;
+    console.error('Logout error:', apiError);
     
     return NextResponse.json(
       { 

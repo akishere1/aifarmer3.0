@@ -44,8 +44,9 @@ export default function Login() {
 
       // Redirect to dashboard on successful login
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
@@ -134,7 +135,7 @@ export default function Login() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300">
               Sign up
             </Link>

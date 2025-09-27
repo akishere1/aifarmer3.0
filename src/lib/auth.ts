@@ -1,4 +1,4 @@
-import jwt, { Secret, SignOptions, JwtPayload as JsonWebTokenPayload } from 'jsonwebtoken';
+import jwt, { JwtPayload as JsonWebTokenPayload } from 'jsonwebtoken';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { IUser } from '@/models/User';
@@ -36,7 +36,7 @@ interface ExtendedJwtPayload extends JsonWebTokenPayload {
 export const verifyToken = (token: string) => {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -90,7 +90,7 @@ export async function authMiddleware(req: NextRequest) {
       try {
         const decoded = jwt.verify(headerToken, JWT_SECRET);
         return decoded;
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { success: false, message: 'Invalid token' },
           { status: 401 }
@@ -102,13 +102,13 @@ export async function authMiddleware(req: NextRequest) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       return decoded;
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { success: false, message: 'Invalid token' },
         { status: 401 }
       );
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Auth middleware error:', error);
     return NextResponse.json(
       { success: false, message: 'Authentication error' },

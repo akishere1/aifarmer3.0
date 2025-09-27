@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { generateToken, setTokenCookie } from '@/lib/auth';
+import { RegisterRequest, AuthResponse, ApiError } from '@/types/api';
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,9 +33,6 @@ export async function POST(req: NextRequest) {
     // Generate token
     const token = generateToken(user);
 
-    // Set token in cookie
-    setTokenCookie(token);
-
     // Return user data (without password)
     const userData = {
       _id: user._id,
@@ -45,18 +43,33 @@ export async function POST(req: NextRequest) {
       phoneNumber: user.phoneNumber,
     };
 
-    return NextResponse.json(
+    // Create response with token in cookie
+    const response = NextResponse.json(
       { success: true, message: 'User registered successfully', user: userData },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error('Registration error:', error);
+
+    // Set cookie for server-side auth
+    response.cookies.set({
+      name: 'token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    });
+
+    return response;
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+    console.error('Registration error:', apiError);
     
     return NextResponse.json(
       { 
         success: false, 
         message: 'Error registering user', 
-        error: error.message || 'Unknown error' 
+        error: apiError.message || 'Unknown error' 
       },
       { status: 500 }
     );
